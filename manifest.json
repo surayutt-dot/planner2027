@@ -1,0 +1,18 @@
+{
+  "name": "Planner 2027 (พ.ศ. 2570)",
+  "short_name": "Planner 2027",
+  "description": "สมุดบันทึกและแพลนเนอร์ปี 2027 ตัวหนังสือใหญ่ สบายตา ดูได้ทั้ง วัน เดือน ปี",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#F8FAFC",
+  "theme_color": "#4F46E5",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

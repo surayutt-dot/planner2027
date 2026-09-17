@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Planner 2027 (พ.ศ. 2570) - สมุดแพลนเนอร์มือถือ</title>
+  
+  <!-- Mobile Web App & PWA Meta -->
+  <meta name="theme-color" content="#4F46E5">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Planner 2027">
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" type="image/svg+xml" href="./icons/icon.svg">
+  <link rel="apple-touch-icon" href="./icons/icon.svg">
+
+  <!-- Google Fonts: Kanit for modern readable Thai text -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="./css/style.css">
+</head>
+<body>
+
+  <div class="app-container">
+    
+    <!-- Top Header Bar -->
+    <header class="top-bar">
+      <div class="brand-area" onclick="App.goToTodayOrStart()">
+        <div class="app-logo">27</div>
+        <div class="brand-title">
+          <span class="brand-main">Planner 2027</span>
+          <span class="brand-sub">พ.ศ. ๒๕๗๐ • แพลนเนอร์</span>
+        </div>
+      </div>
+      <div class="top-actions">
+        <button id="font-scale-btn" class="icon-btn" title="ปรับขนาดตัวอักษร" style="width:auto; padding:0 10px; font-size:var(--text-xs); font-weight:700;">
+          🔍 ตัวใหญ่
+        </button>
+        <button id="theme-toggle-btn" class="icon-btn" title="เปลี่ยนโหมดมืด/สว่าง">
+          🌙
+        </button>
+        <button class="icon-btn" onclick="App.openSettingsModal()" title="ตั้งค่าและสำรองข้อมูล">
+          ⚙️
+        </button>
+      </div>
+    </header>
+
+    <!-- PWA Installation Banner -->
+    <div id="install-banner" class="install-banner">
+      <div class="install-banner-text">📲 ติดตั้งแอปนี้ลงหน้าจอมือถือ</div>
+      <button class="install-btn" onclick="App.installPWA()">ติดตั้งเลย</button>
+    </div>
+
+    <!-- Segmented View Tabs (Top) -->
+    <div class="view-tabs-container">
+      <div class="view-tabs">
+        <button class="view-tab-btn active" data-view="day" onclick="App.switchView('day')">
+          <span>📅</span> <span>รายวัน</span>
+        </button>
+        <button class="view-tab-btn" data-view="month" onclick="App.switchView('month')">
+          <span>🗓️</span> <span>รายเดือน</span>
+        </button>
+        <button class="view-tab-btn" data-view="year" onclick="App.switchView('year')">
+          <span>📆</span> <span>รายปี</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ====================================================================
+         VIEW 1: DAY VIEW (มุมมองรายวัน)
+         ==================================================================== -->
+    <main id="view-day" class="view-section active">
+      
+      <!-- Day Card Header -->
+      <section class="day-header-card">
+        <div class="day-nav-bar">
+          <button class="nav-arrow-btn" onclick="App.changeDay(-1)">
+            ◀ ก่อนหน้า
+          </button>
+          <button class="today-chip" onclick="App.goToTodayOrStart()">
+            วันแรกของปี / วันนี้
+          </button>
+          <button class="nav-arrow-btn" onclick="App.changeDay(1)">
+            ถัดไป ▶
+          </button>
+        </div>
+
+        <div class="day-big-title">
+          <span id="day-header-num" class="day-number-large">1</span>
+          <div>
+            <div id="day-header-name" class="day-name-thai">วันศุกร์</div>
+            <div id="day-header-my" class="day-month-year">มกราคม 2570 (2027)</div>
+          </div>
+        </div>
+
+        <div id="day-holiday-banner" class="holiday-banner" style="display:none;">
+          <!-- Injected by JS -->
+        </div>
+
+        <div id="day-wan-phra-banner" class="wan-phra-banner" style="display:none;">
+          <!-- Injected by JS -->
+        </div>
+      </section>
+
+      <!-- Checklist / To-Do Tasks -->
+      <section class="card-section">
+        <div class="section-header">
+          <h2 class="section-title">
+            <span>📋</span> สิ่งที่ต้องทำวันนี้
+          </h2>
+          <span id="task-badge" class="section-badge">0/0</span>
+        </div>
+
+        <div class="task-input-wrapper">
+          <input type="text" id="new-task-input" class="text-input" placeholder="พิมพ์สิ่งที่ต้องทำ แล้วกดเพิ่ม..." autocomplete="off">
+          <button class="btn-primary" onclick="App.addTask()">+ เพิ่ม</button>
+        </div>
+
+        <div id="task-list-container" class="task-list">
+          <!-- Tasks injected by JS -->
+        </div>
+      </section>
+
+      <!-- Schedule / Agenda -->
+      <section class="card-section">
+        <div class="section-header">
+          <h2 class="section-title">
+            <span>⏰</span> ตารางเวลานัดหมาย
+          </h2>
+          <span id="schedule-badge" class="section-badge">0 นัดหมาย</span>
+        </div>
+
+        <div class="schedule-input-row">
+          <select id="schedule-time-select" class="time-select">
+            <!-- Populated by JS -->
+          </select>
+          <input type="text" id="schedule-title-input" class="text-input" placeholder="นัดหมาย / กิจกรรม..." autocomplete="off">
+          <button class="btn-primary" onclick="App.addSchedule()">+</button>
+        </div>
+
+        <div id="schedule-list-container" class="schedule-list">
+          <!-- Schedules injected by JS -->
+        </div>
+      </section>
+
+      <!-- Daily Journal / Notes -->
+      <section class="card-section">
+        <div class="section-header">
+          <h2 class="section-title">
+            <span>📝</span> บันทึก & ไดอารี่ประจำวัน
+          </h2>
+        </div>
+        <textarea id="daily-notes-textarea" class="notes-textarea" placeholder="จดบันทึกเรื่องราว ความคิด หรือไอเดียของวันนี้... (บันทึกอัตโนมัติ)" oninput="App.onNotesInput(this.value)"></textarea>
+        <div id="notes-save-indicator" class="auto-save-indicator">
+          <span>✓</span> บันทึกเรียบร้อยแล้ว
+        </div>
+      </section>
+
+      <!-- Daily Cute Mascot Card (การ์ตูนน่ารักเปลี่ยนตามวัน) -->
+      <section class="mascot-card" onclick="App.petMascot()" title="แตะเพื่อลูบหัวน้อง">
+        <div class="mascot-avatar-wrap" id="mascot-avatar">
+          <!-- Mascot SVG injected here -->
+        </div>
+        <div class="mascot-info">
+          <span class="mascot-badge">✨ กำลังใจประจำวัน</span>
+          <div class="mascot-name" id="mascot-name">น้องการ์ตูน</div>
+          <div class="mascot-quote" id="mascot-quote">กำลังโหลดข้อความ...</div>
+          <div class="mascot-action-hint">👆 แตะเพื่อเล่นกับน้อง</div>
+        </div>
+        <div id="mascot-heart-bubble" class="mascot-heart-bubble">💖</div>
+      </section>
+
+    </main>
+
+    <!-- ====================================================================
+         VIEW 2: MONTH VIEW (มุมมองรายเดือน)
+         ==================================================================== -->
+    <main id="view-month" class="view-section">
+      
+      <!-- Month Navigation Controls -->
+      <div class="month-header-bar">
+        <button class="nav-arrow-btn" onclick="App.changeMonth(-1)">◀ เดือนก่อน</button>
+        <div class="month-title-wrap">
+          <h2 id="month-view-title" class="month-title">มกราคม</h2>
+          <div id="month-view-sub" class="month-subtitle">พ.ศ. 2570 (2027)</div>
+        </div>
+        <button class="nav-arrow-btn" onclick="App.changeMonth(1)">เดือนถัดไป ▶</button>
+      </div>
+
+      <!-- Quick Month Pills -->
+      <div id="month-pills-container" class="month-selector-scroll">
+        <!-- 12 pills rendered by JS -->
+      </div>
+
+      <!-- Monthly Calendar Grid -->
+      <div class="calendar-card">
+        <div class="weekdays-header">
+          <span class="weekday-sun">อา.</span>
+          <span>จ.</span>
+          <span>อ.</span>
+          <span>พ.</span>
+          <span>พฤ.</span>
+          <span>ศ.</span>
+          <span class="weekday-sat">ส.</span>
+        </div>
+
+        <div id="month-days-grid" class="calendar-days-grid">
+          <!-- Calendar cells injected by JS -->
+        </div>
+
+        <!-- Selected Date Preview & Jump to Day -->
+        <div id="month-day-preview" class="day-preview-box">
+          <!-- Day summary preview injected by JS -->
+        </div>
+      </div>
+
+    </main>
+
+    <!-- ====================================================================
+         VIEW 3: YEAR VIEW (มุมมองรายปี)
+         ==================================================================== -->
+    <main id="view-year" class="view-section">
+      <div class="year-header">
+        <h1 class="year-title">ปี 2027</h1>
+        <div class="year-subtitle">พุทธศักราช ๒๕๗๐ • ปฏิทิน 12 เดือน</div>
+        <div style="font-size:var(--text-xs); color:var(--text-muted); margin-top:4px;">
+          แตะที่เดือนใดก็ได้เพื่อเปิดดูแบบเต็มเดือน
+        </div>
+      </div>
+
+      <div id="year-cards-container" class="year-grid">
+        <!-- 12 Mini month cards injected by JS -->
+      </div>
+    </main>
+
+    <!-- ====================================================================
+         BOTTOM NAVIGATION BAR (Thumb Friendly for Mobile)
+         ==================================================================== -->
+    <nav class="bottom-nav">
+      <div class="bottom-nav-inner">
+        <button class="nav-item active" data-view="day" onclick="App.switchView('day')">
+          <span class="nav-icon">📅</span>
+          <span>รายวัน</span>
+        </button>
+        <button class="nav-item" data-view="month" onclick="App.switchView('month')">
+          <span class="nav-icon">🗓️</span>
+          <span>รายเดือน</span>
+        </button>
+        <button class="nav-item" data-view="year" onclick="App.switchView('year')">
+          <span class="nav-icon">📆</span>
+          <span>รายปี</span>
+        </button>
+        <button class="nav-item" onclick="App.openSearchModal()">
+          <span class="nav-icon">🔍</span>
+          <span>ค้นหา</span>
+        </button>
+        <button class="nav-item" onclick="App.openSettingsModal()">
+          <span class="nav-icon">⚙️</span>
+          <span>ตั้งค่า</span>
+        </button>
+      </div>
+    </nav>
+
+    <!-- ====================================================================
+         MODAL 1: SEARCH
+         ==================================================================== -->
+    <div id="search-modal" class="modal-backdrop">
+      <div class="modal-sheet">
+        <div class="modal-drag-handle"></div>
+        <div class="modal-header">
+          <h2 class="modal-title">🔍 ค้นหาบันทึกปี 2027</h2>
+          <button class="close-btn" onclick="App.closeSearchModal()">✕</button>
+        </div>
+        <input type="text" id="search-query-input" class="text-input" placeholder="พิมพ์สิ่งที่ต้องการค้นหา..." oninput="App.onSearchInput(this.value)">
+        <div id="search-results-list" class="search-results-list">
+          <div class="empty-state">พิมพ์คำค้นหาเพื่อค้นหาโน้ตหรือสิ่งที่ต้องทำตลอดทั้งปี</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====================================================================
+         MODAL 2: SETTINGS & BACKUP
+         ==================================================================== -->
+    <div id="settings-modal" class="modal-backdrop">
+      <div class="modal-sheet">
+        <div class="modal-drag-handle"></div>
+        <div class="modal-header">
+          <h2 class="modal-title">⚙️ ตั้งค่า & จัดการข้อมูล</h2>
+          <button class="close-btn" onclick="App.closeSettingsModal()">✕</button>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:16px;">
+          
+          <!-- Appearance Settings -->
+          <div class="card-section" style="margin-bottom:0;">
+            <div class="section-title" style="margin-bottom:12px;">🎨 หน้าตาและการแสดงผล</div>
+            <div style="display:flex; gap:10px; flex-direction:column;">
+              <div style="display:flex; gap:10px;">
+                <button class="btn-primary" style="flex:1; background:var(--bg-subtle); color:var(--text-primary); border:1px solid var(--border-color);" onclick="App.toggleTheme()">
+                  🌓 สลับโหมดมืด / สว่าง
+                </button>
+                <button class="btn-primary" style="flex:1; background:var(--bg-subtle); color:var(--text-primary); border:1px solid var(--border-color);" onclick="App.toggleFontScale()">
+                  🔍 ขนาดตัวหนังสือ
+                </button>
+              </div>
+              <button id="wan-phra-toggle-btn" class="btn-primary" style="background:var(--bg-subtle); color:var(--text-primary); border:1px solid var(--border-color);" onclick="App.toggleWanPhra()">
+                🪷 แสดงวันพระ: เปิด
+              </button>
+            </div>
+          </div>
+
+          <!-- Backup & Restore -->
+          <div class="card-section" style="margin-bottom:0;">
+            <div class="section-title" style="margin-bottom:8px;">💾 สำรองและกู้คืนข้อมูล</div>
+            <p style="font-size:var(--text-xs); color:var(--text-secondary); margin-bottom:12px;">
+              ข้อมูลของคุณจะถูกบันทึกไว้ในเบราว์เซอร์ของมือถือเครื่องนี้ คุณสามารถดาวน์โหลดไฟล์สำรองเก็บไว้ หรือนำไปเปิดบนเครื่องอื่นได้
+            </p>
+            <div style="display:flex; gap:10px; flex-direction:column;">
+              <button class="btn-primary" onclick="App.exportData()">
+                📥 ดาวน์โหลดไฟล์สำรอง (Export Backup)
+              </button>
+              <label class="btn-primary" style="background:var(--bg-subtle); color:var(--text-primary); border:1px solid var(--border-color); text-align:center; display:flex; justify-content:center; cursor:pointer;">
+                📤 กู้คืนข้อมูลจากไฟล์ (Import Backup)
+                <input type="file" accept=".json" style="display:none;" onchange="App.importData(event)">
+              </label>
+            </div>
+          </div>
+
+          <!-- Danger Zone -->
+          <div class="card-section" style="margin-bottom:0; border-color:var(--accent-holiday-bg);">
+            <div class="section-title" style="color:var(--accent-holiday); margin-bottom:8px;">⚠️ ล้างข้อมูล</div>
+            <p style="font-size:var(--text-xs); color:var(--text-secondary); margin-bottom:12px;">
+              ล้างรายการบันทึก สิ่งที่ต้องทำ และนัดหมายทั้งหมดของปี 2027 ออกจากเครื่อง
+            </p>
+            <button class="btn-primary" style="background:var(--accent-holiday); width:100%;" onclick="App.clearAllData()">
+              🗑️ ล้างข้อมูลทั้งหมด
+            </button>
+          </div>
+
+          <!-- PWA Tips -->
+          <div style="font-size:var(--text-xs); color:var(--text-muted); text-align:center; line-height:1.6; padding:10px;">
+            💡 <strong>วิธีติดตั้งเป็นแอปบนมือถือ:</strong><br>
+            • บน iPhone (Safari): กดปุ่มแชร์ (Share) แล้วเลือก <em>"เพิ่มไปยังหน้าจอโฮม" (Add to Home Screen)</em><br>
+            • บน Android (Chrome): กดจุดสามจุด (⋮) แล้วเลือก <em>"เพิ่มลงในหน้าจอหลัก" (Install App)</em>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Scripts -->
+  <script src="./js/holidays.js"></script>
+  <script src="./js/mascot.js"></script>
+  <script src="./js/storage.js"></script>
+  <script src="./js/app.js"></script>
+</body>
+</html>
