@@ -593,8 +593,35 @@ body {
 
 .schedule-content {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.schedule-title-text {
   font-size: var(--text-base);
   color: var(--text-primary);
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.schedule-reminder-badge {
+  font-size: var(--text-xs);
+  color: var(--accent-warning);
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+@keyframes ringBell {
+  0% { transform: rotate(0); }
+  15% { transform: rotate(14deg); }
+  30% { transform: rotate(-14deg); }
+  45% { transform: rotate(10deg); }
+  60% { transform: rotate(-10deg); }
+  75% { transform: rotate(4deg); }
+  100% { transform: rotate(0); }
 }
 
 /* Daily Journal / Notes Textarea */

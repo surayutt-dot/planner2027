@@ -133,12 +133,23 @@
           <span id="schedule-badge" class="section-badge">0 นัดหมาย</span>
         </div>
 
-        <div class="schedule-input-row">
-          <select id="schedule-time-select" class="time-select">
+        <div class="schedule-input-row" style="margin-bottom:8px;">
+          <select id="schedule-time-select" class="time-select" style="flex:1;">
             <!-- Populated by JS -->
           </select>
-          <input type="text" id="schedule-title-input" class="text-input" placeholder="นัดหมาย / กิจกรรม..." autocomplete="off">
-          <button class="btn-primary" onclick="App.addSchedule()">+</button>
+          <select id="schedule-reminder-select" class="time-select" style="flex:1.2;">
+            <option value="5" selected>🔔 เตือนก่อน 5 นาที</option>
+            <option value="10">🔔 เตือนก่อน 10 นาที</option>
+            <option value="15">🔔 เตือนก่อน 15 นาที</option>
+            <option value="30">🔔 เตือนก่อน 30 นาที</option>
+            <option value="60">🔔 เตือนก่อน 1 ชม.</option>
+            <option value="0">🔔 เตือนตรงเวลา</option>
+            <option value="-1">🔕 ไม่ต้องเตือน</option>
+          </select>
+        </div>
+        <div class="schedule-input-row">
+          <input type="text" id="schedule-title-input" class="text-input" placeholder="พิมพ์ชื่องาน / นัดหมาย..." autocomplete="off">
+          <button class="btn-primary" onclick="App.addSchedule()">+ เพิ่ม</button>
         </div>
 
         <div id="schedule-list-container" class="schedule-list">
@@ -312,6 +323,22 @@
             </div>
           </div>
 
+          <!-- Notification & Sound Reminders -->
+          <div class="card-section" style="margin-bottom:0;">
+            <div class="section-title" style="margin-bottom:8px;">🔔 ระบบแจ้งเตือนนัดหมาย</div>
+            <p style="font-size:var(--text-xs); color:var(--text-secondary); margin-bottom:12px;">
+              เมื่อถึงเวลานัดหมาย (หรือก่อนเวลาที่เลือกไว้) ระบบจะส่งเสียงกริ่งเตือนและแสดงหน้าต่างเตือน
+            </p>
+            <div style="display:flex; gap:10px; flex-direction:column;">
+              <button id="noti-permission-btn" class="btn-primary" style="background:var(--bg-subtle); color:var(--text-primary); border:1px solid var(--border-color);" onclick="App.requestNotificationPermission()">
+                🔔 เปิดการแจ้งเตือนของเครื่อง
+              </button>
+              <button class="btn-primary" style="background:var(--primary-light); color:var(--primary-text); border:1px solid var(--primary);" onclick="App.testReminderAlert()">
+                🔊 ทดสอบเสียงกริ่ง & ระบบเตือน
+              </button>
+            </div>
+          </div>
+
           <!-- Backup & Restore -->
           <div class="card-section" style="margin-bottom:0;">
             <div class="section-title" style="margin-bottom:8px;">💾 สำรองและกู้คืนข้อมูล</div>
@@ -348,6 +375,21 @@
           </div>
 
         </div>
+      </div>
+    </div>
+
+    <!-- ====================================================================
+         MODAL 3: REMINDER ALERT POPUP (หน้าต่างเตือนเมื่อถึงเวลานัด)
+         ==================================================================== -->
+    <div id="reminder-modal" class="modal-backdrop">
+      <div class="modal-sheet" style="text-align: center; padding: 28px 20px;">
+        <div style="font-size: 3.5rem; margin-bottom: 8px; animation: ringBell 1s ease-in-out infinite; display: inline-block;">⏰</div>
+        <div class="mascot-badge" style="font-size: 1rem; color: var(--accent-warning); margin-bottom: 6px;">🔔 แจ้งเตือนนัดหมาย</div>
+        <h2 id="reminder-modal-title" style="font-size: var(--text-2xl); font-weight: 800; margin: 6px 0; color: var(--text-primary);">ชื่องาน</h2>
+        <p id="reminder-modal-time" style="font-size: var(--text-lg); color: var(--primary); font-weight: 700; margin-bottom: 20px;">เวลานัดหมาย 14:00 น.</p>
+        <button class="btn-primary" style="width: 100%; justify-content: center; font-size: var(--text-base); height: 50px;" onclick="App.dismissReminderModal()">
+          ✓ รับทราบแล้ว
+        </button>
       </div>
     </div>
 

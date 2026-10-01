@@ -20,6 +20,8 @@ const App = {
     this.bindEvents();
     this.registerServiceWorker();
     this.checkPWAInstall();
+    this.updateNotificationButtonState();
+    this.startReminderTicker();
 
     // Initial render
     this.switchView('day');
@@ -251,19 +253,36 @@ const App = {
     // Sort by time
     schedules.sort((a, b) => (a.time || '').localeCompare(b.time || ''));
 
-    listEl.innerHTML = schedules.map((item, idx) => `
-      <div class="schedule-item">
-        <span class="schedule-time">${item.time}</span>
-        <span class="schedule-content">${this.escapeHtml(item.title)}</span>
-        <button class="delete-task-btn" onclick="App.deleteSchedule(${idx})" title="ลบ">✕</button>
-      </div>
-    `).join('');
+    listEl.innerHTML = schedules.map((item, idx) => {
+      let reminderBadge = '';
+      const rem = item.reminder !== undefined ? parseInt(item.reminder) : 5;
+      if (rem > 0) {
+        reminderBadge = `<span class="schedule-reminder-badge">🔔 เตือนก่อน ${rem} นาที</span>`;
+      } else if (rem === 0) {
+        reminderBadge = `<span class="schedule-reminder-badge">🔔 เตือนตรงเวลา</span>`;
+      } else {
+        reminderBadge = `<span class="schedule-reminder-badge" style="color:var(--text-muted);">🔕 ไม่เตือน</span>`;
+      }
+
+      return `
+        <div class="schedule-item">
+          <span class="schedule-time">${item.time}</span>
+          <div class="schedule-content">
+            <span class="schedule-title-text">${this.escapeHtml(item.title)}</span>
+            ${reminderBadge}
+          </div>
+          <button class="delete-task-btn" onclick="App.deleteSchedule(${idx})" title="ลบ">✕</button>
+        </div>
+      `;
+    }).join('');
   },
 
   addSchedule() {
     const timeSelect = document.getElementById('schedule-time-select');
+    const reminderSelect = document.getElementById('schedule-reminder-select');
     const input = document.getElementById('schedule-title-input');
     const time = timeSelect.value;
+    const reminder = reminderSelect ? parseInt(reminderSelect.value) : 5;
     const title = input.value.trim();
     if (!title) return;
 
@@ -274,7 +293,9 @@ const App = {
     dayData.schedule.push({
       id: Date.now(),
       time: time,
-      title: title
+      title: title,
+      reminder: reminder,
+      notified: false
     });
 
     Storage.saveDayData(dateKey, dayData);
@@ -755,6 +776,150 @@ const App = {
         const banner = document.getElementById('install-banner');
         if (banner) banner.classList.remove('show');
       });
+    }
+  },
+
+  // --------------------------------------------------------------------------
+  // Reminder & Alarm Notifications
+  // --------------------------------------------------------------------------
+  playReminderChime() {
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const now = ctx.currentTime;
+      // Melodic chime: C5 (523Hz), E5 (659Hz), G5 (784Hz), C6 (1046Hz)
+      const freqs = [523.25, 659.25, 783.99, 1046.50];
+      freqs.forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, now + idx * 0.15);
+        gain.gain.setValueAtTime(0, now + idx * 0.15);
+        gain.gain.linearRampToValueAtTime(0.3, now + idx * 0.15 + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.15 + 0.55);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now + idx * 0.15);
+        osc.stop(now + idx * 0.15 + 0.6);
+      });
+    } catch (e) {
+      console.warn('Audio chime error:', e);
+    }
+  },
+
+  triggerReminder(title, timeStr, dateLabel, reminderMinutes) {
+    // 1. Play sound chime
+    this.playReminderChime();
+
+    // 2. Vibrate phone
+    if ('vibrate' in navigator) {
+      try {
+        navigator.vibrate([300, 150, 300, 150, 400]);
+      } catch (e) {}
+    }
+
+    // 3. Show System Notification if permitted
+    if ('Notification' in window && Notification.permission === 'granted') {
+      try {
+        const leadText = reminderMinutes > 0 ? `(อีก ${reminderMinutes} นาทีจะถึงเวลา)` : '(ถึงเวลาแล้ว)';
+        new Notification(`⏰ นัดหมาย: ${title}`, {
+          body: `เวลา ${timeStr} ${leadText}`,
+          icon: './icons/icon.svg',
+          badge: './icons/icon.svg'
+        });
+      } catch (e) {}
+    }
+
+    // 4. Show In-App Modal Dialog
+    const modal = document.getElementById('reminder-modal');
+    const titleEl = document.getElementById('reminder-modal-title');
+    const timeEl = document.getElementById('reminder-modal-time');
+    if (modal && titleEl && timeEl) {
+      titleEl.textContent = title;
+      const leadText = reminderMinutes > 0 ? `(เตือนก่อนเวลา ${reminderMinutes} นาที)` : '';
+      timeEl.textContent = `เวลานัดหมาย ${timeStr} น. ${leadText}`;
+      modal.classList.add('open');
+    }
+  },
+
+  dismissReminderModal() {
+    const modal = document.getElementById('reminder-modal');
+    if (modal) modal.classList.remove('open');
+  },
+
+  testReminderAlert() {
+    this.triggerReminder('นัดประชุมทีม / งานสำคัญ', '14:00', 'วันนี้', 5);
+  },
+
+  requestNotificationPermission() {
+    if ('Notification' in window) {
+      Notification.requestPermission().then(permission => {
+        this.updateNotificationButtonState();
+        if (permission === 'granted') {
+          alert('เปิดใช้งานระบบแจ้งเตือนสำเร็จแล้ว!');
+        } else {
+          alert('คุณยังไม่ได้อนุญาตการแจ้งเตือน หากต้องการเปิด สามารถตั้งค่าในเบราว์เซอร์ได้ครับ');
+        }
+      });
+    } else {
+      alert('เบราว์เซอร์ของคุณยังไม่รองรับระบบ Web Notification แต่ระบบยังคงส่งเสียงกริ่งและหน้าต่างเตือนในแอปได้ตามปกติครับ');
+    }
+  },
+
+  updateNotificationButtonState() {
+    const btn = document.getElementById('noti-permission-btn');
+    if (!btn) return;
+    if ('Notification' in window) {
+      if (Notification.permission === 'granted') {
+        btn.innerHTML = '✅ เปิดการแจ้งเตือนแล้ว';
+        btn.style.color = 'var(--accent-success)';
+      } else if (Notification.permission === 'denied') {
+        btn.innerHTML = '🚫 การแจ้งเตือนถูกปิดไว้ในเบราว์เซอร์';
+      } else {
+        btn.innerHTML = '🔔 เปิดการแจ้งเตือนของเครื่อง';
+      }
+    } else {
+      btn.innerHTML = '🔔 เสียงกริ่งและแจ้งเตือนในแอป (พร้อมใช้งาน)';
+    }
+  },
+
+  startReminderTicker() {
+    // Check every 15 seconds
+    setInterval(() => {
+      this.checkUpcomingReminders();
+    }, 15000);
+    // Initial check
+    this.checkUpcomingReminders();
+  },
+
+  checkUpcomingReminders() {
+    const now = new Date();
+    const todayKey = this.formatDateKey(now);
+    const dayData = Storage.getDayData(todayKey);
+    if (!dayData || !dayData.schedule || dayData.schedule.length === 0) return;
+
+    const currentTotalMinutes = now.getHours() * 60 + now.getMinutes();
+
+    let hasChanges = false;
+    dayData.schedule.forEach(item => {
+      const rem = item.reminder !== undefined ? parseInt(item.reminder) : 5;
+      if (rem === -1 || item.notified) return;
+
+      const [h, m] = item.time.split(':').map(Number);
+      const scheduleTotalMinutes = h * 60 + m;
+      const targetMinute = scheduleTotalMinutes - rem;
+
+      // Trigger if current total minutes is within trigger window
+      if (currentTotalMinutes >= targetMinute && currentTotalMinutes <= targetMinute + 2) {
+        item.notified = true;
+        hasChanges = true;
+        this.triggerReminder(item.title, item.time, todayKey, rem);
+      }
+    });
+
+    if (hasChanges) {
+      Storage.saveDayData(todayKey, dayData);
     }
   },
 
