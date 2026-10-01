@@ -3,10 +3,10 @@
 // ==========================================================================
 
 const App = {
-  year: 2027,
+  year: new Date().getFullYear(),
   currentView: 'day', // 'day' | 'month' | 'year'
-  currentDate: new Date(2027, 0, 1), // Default Jan 1, 2027
-  currentMonth: 0, // 0 - 11
+  currentDate: new Date(), // Real-world today (e.g. October 2026, 2027, etc.)
+  currentMonth: new Date().getMonth(), // 0 - 11
   settings: {
     theme: 'light',
     fontScale: 'normal',
@@ -142,6 +142,8 @@ const App = {
     document.getElementById('day-header-num').textContent = dayNum;
     document.getElementById('day-header-name').textContent = dayOfWeek;
     document.getElementById('day-header-my').textContent = `${monthName} พ.ศ. ${thaiYear} (${date.getFullYear()})`;
+    const topSub = document.getElementById('top-sub-year');
+    if (topSub) topSub.textContent = `พ.ศ. ${thaiYear} (${date.getFullYear()})`;
 
     // Check Holiday
     const holiday = getThaiHoliday(dateKey);
@@ -377,32 +379,29 @@ const App = {
   changeDay(offset) {
     const newDate = new Date(this.currentDate);
     newDate.setDate(newDate.getDate() + offset);
-
-    // Keep within 2027
-    if (newDate.getFullYear() === 2027) {
-      this.currentDate = newDate;
-      this.currentMonth = newDate.getMonth();
-      this.renderDayView();
-    }
+    this.currentDate = newDate;
+    this.year = newDate.getFullYear();
+    this.currentMonth = newDate.getMonth();
+    this.renderDayView();
   },
 
   goToDate(dateStr) {
     const parts = dateStr.split('-');
     this.currentDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+    this.year = this.currentDate.getFullYear();
     this.currentMonth = this.currentDate.getMonth();
     this.switchView('day');
   },
 
-  goToTodayOrStart() {
-    const today = new Date();
-    if (today.getFullYear() === 2027) {
-      this.currentDate = today;
-      this.currentMonth = today.getMonth();
-    } else {
-      this.currentDate = new Date(2027, 0, 1);
-      this.currentMonth = 0;
-    }
+  goToToday() {
+    this.currentDate = new Date();
+    this.year = this.currentDate.getFullYear();
+    this.currentMonth = this.currentDate.getMonth();
     this.renderDayView();
+  },
+
+  goToTodayOrStart() {
+    this.goToToday();
   },
 
   // --------------------------------------------------------------------------
@@ -501,9 +500,18 @@ const App = {
 
   changeMonth(offset) {
     let newM = this.currentMonth + offset;
-    if (newM < 0) newM = 0;
-    if (newM > 11) newM = 11;
-    this.selectMonth(newM);
+    let newY = this.year;
+    if (newM < 0) {
+      newM = 11;
+      newY -= 1;
+    } else if (newM > 11) {
+      newM = 0;
+      newY += 1;
+    }
+    this.year = newY;
+    this.currentMonth = newM;
+    this.currentDate = new Date(this.year, newM, 1);
+    this.renderMonthView();
   },
 
   onMonthCellClick(dateKey) {
@@ -560,7 +568,19 @@ const App = {
   // --------------------------------------------------------------------------
   // 3. YEAR VIEW LOGIC
   // --------------------------------------------------------------------------
+  changeYear(offset) {
+    this.year += offset;
+    this.renderYearView();
+  },
+
   renderYearView() {
+    const year = this.year;
+    const thaiYear = year + 543;
+    const titleEl = document.getElementById('year-view-title');
+    const subEl = document.getElementById('year-view-sub');
+    if (titleEl) titleEl.textContent = `ปี ${year}`;
+    if (subEl) subEl.textContent = `พุทธศักราช ${thaiYear} • ปฏิทิน 12 เดือน`;
+
     const container = document.getElementById('year-cards-container');
     container.innerHTML = '';
 
@@ -568,8 +588,8 @@ const App = {
     const weekdaysShort = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'];
 
     for (let m = 0; m < 12; m++) {
-      const firstDay = new Date(2027, m, 1).getDay();
-      const totalDays = new Date(2027, m + 1, 0).getDate();
+      const firstDay = new Date(year, m, 1).getDay();
+      const totalDays = new Date(year, m + 1, 0).getDate();
       
       let miniGridHtml = '';
       // Fill empty slots
@@ -578,7 +598,7 @@ const App = {
       }
       // Fill days
       for (let d = 1; d <= totalDays; d++) {
-        const dateKey = `2027-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        const dateKey = `${year}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
         const holiday = getThaiHoliday(dateKey);
         const hasData = datesWithData[dateKey];
 
@@ -608,7 +628,7 @@ const App = {
 
   jumpToMonthFromYear(monthIdx) {
     this.currentMonth = monthIdx;
-    this.currentDate = new Date(2027, monthIdx, 1);
+    this.currentDate = new Date(this.year, monthIdx, 1);
     this.switchView('month');
   },
 
@@ -631,7 +651,7 @@ const App = {
   onSearchInput(query) {
     const listEl = document.getElementById('search-results-list');
     if (!query || !query.trim()) {
-      listEl.innerHTML = '<div class="empty-state">พิมพ์คำค้นหาเพื่อค้นหาโน้ตหรือสิ่งที่ต้องทำตลอดทั้งปี</div>';
+      listEl.innerHTML = '<div class="empty-state">พิมพ์คำค้นหาเพื่อค้นหาโน้ตหรือสิ่งที่ต้องทำ</div>';
       return;
     }
 
@@ -644,7 +664,8 @@ const App = {
     listEl.innerHTML = results.map(res => {
       const parts = res.dateStr.split('-');
       const dObj = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
-      const dateLabel = `${THAI_DAY_NAMES[dObj.getDay()]}ที่ ${dObj.getDate()} ${THAI_MONTH_NAMES[dObj.getMonth()]} 2570`;
+      const thaiY = dObj.getFullYear() + 543;
+      const dateLabel = `${THAI_DAY_NAMES[dObj.getDay()]}ที่ ${dObj.getDate()} ${THAI_MONTH_NAMES[dObj.getMonth()]} ${thaiY} (${dObj.getFullYear()})`;
 
       const itemsHtml = res.items.map(item => `
         <div style="font-size:var(--text-sm); margin-top:2px;">
@@ -700,7 +721,7 @@ const App = {
   },
 
   clearAllData() {
-    if (confirm('คุณแน่ใจหรือไม่ว่าต้องการล้างข้อมูลบันทึกทั้งหมดของปี 2027? (ไม่สามารถกู้คืนได้หากไม่ได้สำรองข้อมูลไว้)')) {
+    if (confirm('คุณแน่ใจหรือไม่ว่าต้องการล้างข้อมูลบันทึกทั้งหมด? (ไม่สามารถกู้คืนได้หากไม่ได้สำรองข้อมูลไว้)')) {
       Storage.saveAll({});
       alert('ล้างข้อมูลเรียบร้อยแล้ว');
       this.renderDayView();

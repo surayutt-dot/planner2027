@@ -1,32 +1,59 @@
-// ข้อมูลวันหยุดราชการและวันสำคัญของไทย ประจำปี 2027 (พ.ศ. 2570)
-const THAI_HOLIDAYS_2027 = {
-  "2027-01-01": { name: "วันขึ้นปีใหม่", isOfficial: true },
-  "2027-02-14": { name: "วันวาเลนไทน์", isOfficial: false },
+// ข้อมูลวันหยุดราชการและวันสำคัญของไทย (รองรับหลายปี 2026, 2027, 2028+)
+
+// 1. วันสำคัญและวันหยุดราชการที่มีวันที่แน่นอนในทุกๆ ปี
+const FIXED_ANNUAL_HOLIDAYS = {
+  "01-01": { name: "วันขึ้นปีใหม่", isOfficial: true },
+  "02-14": { name: "วันวาเลนไทน์", isOfficial: false },
+  "04-06": { name: "วันจักรี", isOfficial: true },
+  "04-13": { name: "วันสงกรานต์ (วันผู้สูงอายุแห่งชาติ)", isOfficial: true },
+  "04-14": { name: "วันสงกรานต์ (วันครอบครัว)", isOfficial: true },
+  "04-15": { name: "วันสงกรานต์", isOfficial: true },
+  "05-01": { name: "วันแรงงานแห่งชาติ", isOfficial: true },
+  "05-04": { name: "วันฉัตรมงคล", isOfficial: true },
+  "06-03": { name: "วันเฉลิมพระชนมพรรษาสมเด็จพระนางเจ้าฯ พระบรมราชินี", isOfficial: true },
+  "07-28": { name: "วันเฉลิมพระชนมพรรษาพระบาทสมเด็จพระเจ้าอยู่หัว (ร.10)", isOfficial: true },
+  "08-12": { name: "วันแม่แห่งชาติ / วันเฉลิมพระชนมพรรษาพระพันปีหลวง", isOfficial: true },
+  "10-13": { name: "วันนวมินทรมหาราช", isOfficial: true },
+  "10-23": { name: "วันปิยมหาราช", isOfficial: true },
+  "10-31": { name: "วันฮาโลวีน", isOfficial: false },
+  "12-05": { name: "วันพ่อแห่งชาติ / วันชาติ (ร.9)", isOfficial: true },
+  "12-10": { name: "วันรัฐธรรมนูญ", isOfficial: true },
+  "12-25": { name: "วันคริสต์มาส", isOfficial: false },
+  "12-31": { name: "วันสิ้นปี", isOfficial: true }
+};
+
+// 2. วันหยุดทางศาสนาและวันหยุดพิเศษที่เปลี่ยนตามปีปฏิทิน
+const YEAR_SPECIFIC_HOLIDAYS = {
+  // 2026
+  "2026-03-03": { name: "วันมาฆบูชา", isOfficial: true },
+  "2026-05-31": { name: "วันวิสาขบูชา", isOfficial: true },
+  "2026-06-01": { name: "วันหยุดชดเชยวันวิสาขบูชา", isOfficial: true },
+  "2026-07-29": { name: "วันอาสาฬหบูชา", isOfficial: true },
+  "2026-07-30": { name: "วันเข้าพรรษา", isOfficial: true },
+  "2026-10-24": { name: "วันหยุดชดเชยวันปิยมหาราช", isOfficial: true },
+  "2026-10-26": { name: "วันออกพรรษา", isOfficial: false },
+  "2026-11-24": { name: "วันลอยกระทง", isOfficial: false },
+  "2026-12-07": { name: "วันหยุดชดเชยวันพ่อแห่งชาติ", isOfficial: true },
+
+  // 2027
   "2027-02-21": { name: "วันมาฆบูชา", isOfficial: true },
   "2027-02-22": { name: "วันหยุดชดเชยวันมาฆบูชา", isOfficial: true },
-  "2027-04-06": { name: "วันจักรี", isOfficial: true },
-  "2027-04-13": { name: "วันสงกรานต์ (วันผู้สูงอายุแห่งชาติ)", isOfficial: true },
-  "2027-04-14": { name: "วันสงกรานต์ (วันครอบครัว)", isOfficial: true },
-  "2027-04-15": { name: "วันสงกรานต์", isOfficial: true },
-  "2027-05-01": { name: "วันแรงงานแห่งชาติ", isOfficial: true },
   "2027-05-03": { name: "วันหยุดชดเชยวันแรงงานแห่งชาติ", isOfficial: true },
-  "2027-05-04": { name: "วันฉัตรมงคล", isOfficial: true },
   "2027-05-20": { name: "วันวิสาขบูชา", isOfficial: true },
-  "2027-06-03": { name: "วันเฉลิมพระชนมพรรษาสมเด็จพระนางเจ้าฯ พระบรมราชินี", isOfficial: true },
   "2027-07-18": { name: "วันอาสาฬหบูชา", isOfficial: true },
   "2027-07-19": { name: "วันเข้าพรรษา / วันหยุดชดเชยวันอาสาฬหบูชา", isOfficial: true },
-  "2027-07-28": { name: "วันเฉลิมพระชนมพรรษาพระบาทสมเด็จพระเจ้าอยู่หัว (ร.10)", isOfficial: true },
-  "2027-08-12": { name: "วันแม่แห่งชาติ / วันเฉลิมพระชนมพรรษาพระพันปีหลวง", isOfficial: true },
-  "2027-10-13": { name: "วันนวมินทรมหาราช", isOfficial: true },
-  "2027-10-23": { name: "วันปิยมหาราช", isOfficial: true },
+  "2027-10-15": { name: "วันออกพรรษา", isOfficial: false },
   "2027-10-25": { name: "วันหยุดชดเชยวันปิยมหาราช", isOfficial: true },
-  "2027-10-31": { name: "วันฮาโลวีน", isOfficial: false },
-  "2027-11-13": { name: "วันลอยกระทง", isOfficial: false },
-  "2027-12-05": { name: "วันพ่อแห่งชาติ / วันชาติ (ร.9)", isOfficial: true },
+  "2027-11-14": { name: "วันลอยกระทง", isOfficial: false },
   "2027-12-06": { name: "วันหยุดชดเชยวันพ่อแห่งชาติ", isOfficial: true },
-  "2027-12-10": { name: "วันรัฐธรรมนูญ", isOfficial: true },
-  "2027-12-25": { name: "วันคริสต์มาส", isOfficial: false },
-  "2027-12-31": { name: "วันสิ้นปี", isOfficial: true }
+
+  // 2028
+  "2028-02-10": { name: "วันมาฆบูชา", isOfficial: true },
+  "2028-05-09": { name: "วันวิสาขบูชา", isOfficial: true },
+  "2028-07-07": { name: "วันอาสาฬหบูชา", isOfficial: true },
+  "2028-07-08": { name: "วันเข้าพรรษา", isOfficial: true },
+  "2028-10-03": { name: "วันออกพรรษา", isOfficial: false },
+  "2028-11-02": { name: "วันลอยกระทง", isOfficial: false }
 };
 
 const THAI_MONTH_NAMES = [
@@ -49,11 +76,35 @@ const THAI_DAY_NAMES = [
 const THAI_DAY_SHORT = ["อา.", "จ.", "อ.", "พ.", "พฤ.", "ศ.", "ส."];
 
 function getThaiHoliday(dateString) {
-  return THAI_HOLIDAYS_2027[dateString] || null;
+  // Check specific year holidays first
+  if (YEAR_SPECIFIC_HOLIDAYS[dateString]) {
+    return YEAR_SPECIFIC_HOLIDAYS[dateString];
+  }
+  // Check fixed annual holidays (MM-DD)
+  const monthDay = dateString.slice(5);
+  if (FIXED_ANNUAL_HOLIDAYS[monthDay]) {
+    return FIXED_ANNUAL_HOLIDAYS[monthDay];
+  }
+  return null;
 }
 
-// ข้อมูลวันพระ (วันธรรมสวนะ) ประจำปี 2027 (พ.ศ. 2570)
-const THAI_WAN_PHRA_2027 = {
+// ข้อมูลวันพระ (วันธรรมสวนะ)
+const KNOWN_WAN_PHRA = {
+  // 2026 (ต.ค. - ธ.ค. 2026)
+  "2026-10-04": "แรม ๘ ค่ำ เดือน ๑๐",
+  "2026-10-11": "แรม ๑๕ ค่ำ เดือน ๑๐",
+  "2026-10-19": "ขึ้น ๘ ค่ำ เดือน ๑๑",
+  "2026-10-26": "ขึ้น ๑๕ ค่ำ เดือน ๑๑ (วันออกพรรษา)",
+  "2026-11-02": "แรม ๘ ค่ำ เดือน ๑๑",
+  "2026-11-09": "แรม ๑๕ ค่ำ เดือน ๑๑",
+  "2026-11-17": "ขึ้น ๘ ค่ำ เดือน ๑๒",
+  "2026-11-24": "ขึ้น ๑๕ ค่ำ เดือน ๑๒ (วันลอยกระทง)",
+  "2026-12-02": "แรม ๘ ค่ำ เดือน ๑๒",
+  "2026-12-09": "แรม ๑๕ ค่ำ เดือน ๑๒",
+  "2026-12-17": "ขึ้น ๘ ค่ำ เดือน ๑",
+  "2026-12-24": "ขึ้น ๑๕ ค่ำ เดือน ๑",
+
+  // 2027 (ครบ 12 เดือน)
   "2027-01-07": "แรม ๑๕ ค่ำ เดือน ๑",
   "2027-01-15": "ขึ้น ๘ ค่ำ เดือน ๒",
   "2027-01-22": "ขึ้น ๑๕ ค่ำ เดือน ๒",
@@ -102,10 +153,19 @@ const THAI_WAN_PHRA_2027 = {
   "2027-12-06": "ขึ้น ๘ ค่ำ เดือน ๑",
   "2027-12-13": "ขึ้น ๑๕ ค่ำ เดือน ๑",
   "2027-12-20": "แรม ๘ ค่ำ เดือน ๑",
-  "2027-12-27": "แรม ๑๕ ค่ำ เดือน ๑"
+  "2027-12-27": "แรม ๑๕ ค่ำ เดือน ๑",
+
+  // 2028 (ตัวอย่างวันสำคัญ)
+  "2028-02-10": "ขึ้น ๑๕ ค่ำ เดือน ๓ (วันมาฆบูชา)",
+  "2028-05-09": "ขึ้น ๑๕ ค่ำ เดือน ๖ (วันวิสาขบูชา)",
+  "2028-07-07": "ขึ้น ๑๕ ค่ำ เดือน ๘ (วันอาสาฬหบูชา)",
+  "2028-10-03": "ขึ้น ๑๕ ค่ำ เดือน ๑๑ (วันออกพรรษา)",
+  "2028-11-02": "ขึ้น ๑๕ ค่ำ เดือน ๑๒ (วันลอยกระทง)"
 };
 
 function getWanPhra(dateString) {
-  return THAI_WAN_PHRA_2027[dateString] || null;
+  if (KNOWN_WAN_PHRA[dateString]) {
+    return KNOWN_WAN_PHRA[dateString];
+  }
+  return null;
 }
-

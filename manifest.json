@@ -1,7 +1,7 @@
 {
-  "name": "Planner 2027 (พ.ศ. 2570)",
-  "short_name": "Planner 2027",
-  "description": "สมุดบันทึกและแพลนเนอร์ปี 2027 ตัวหนังสือใหญ่ สบายตา ดูได้ทั้ง วัน เดือน ปี",
+  "name": "Planner - สมุดแพลนเนอร์มือถือ",
+  "short_name": "Planner",
+  "description": "สมุดบันทึกและแพลนเนอร์ ตัวหนังสือใหญ่ สบายตา ดูได้ทั้ง วัน เดือน ปี ใช้งานได้ต่อเนื่องทุกปี",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#F8FAFC",

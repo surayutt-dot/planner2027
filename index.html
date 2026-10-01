@@ -28,11 +28,11 @@
     
     <!-- Top Header Bar -->
     <header class="top-bar">
-      <div class="brand-area" onclick="App.goToTodayOrStart()">
-        <div class="app-logo">27</div>
+      <div class="brand-area" onclick="App.goToToday()">
+        <div class="app-logo">📅</div>
         <div class="brand-title">
-          <span class="brand-main">Planner 2027</span>
-          <span class="brand-sub">พ.ศ. ๒๕๗๐ • แพลนเนอร์</span>
+          <span class="brand-main">สมุดแพลนเนอร์</span>
+          <span class="brand-sub" id="top-sub-year">บันทึก & ปฏิทิน</span>
         </div>
       </div>
       <div class="top-actions">
@@ -80,8 +80,8 @@
           <button class="nav-arrow-btn" onclick="App.changeDay(-1)">
             ◀ ก่อนหน้า
           </button>
-          <button class="today-chip" onclick="App.goToTodayOrStart()">
-            วันแรกของปี / วันนี้
+          <button class="today-chip" onclick="App.goToToday()">
+            วันนี้
           </button>
           <button class="nav-arrow-btn" onclick="App.changeDay(1)">
             ถัดไป ▶
@@ -235,8 +235,14 @@
          ==================================================================== -->
     <main id="view-year" class="view-section">
       <div class="year-header">
-        <h1 class="year-title">ปี 2027</h1>
-        <div class="year-subtitle">พุทธศักราช ๒๕๗๐ • ปฏิทิน 12 เดือน</div>
+        <div class="month-header-bar" style="margin-bottom: 8px;">
+          <button class="nav-arrow-btn" onclick="App.changeYear(-1)">◀ ปีก่อนหน้า</button>
+          <div class="month-title-wrap">
+            <h1 id="year-view-title" class="year-title" style="font-size: var(--text-2xl);">ปี 2026</h1>
+            <div id="year-view-sub" class="year-subtitle">พุทธศักราช ๒๕๖๙</div>
+          </div>
+          <button class="nav-arrow-btn" onclick="App.changeYear(1)">ปีถัดไป ▶</button>
+        </div>
         <div style="font-size:var(--text-xs); color:var(--text-muted); margin-top:4px;">
           แตะที่เดือนใดก็ได้เพื่อเปิดดูแบบเต็มเดือน
         </div>
@@ -282,7 +288,7 @@
       <div class="modal-sheet">
         <div class="modal-drag-handle"></div>
         <div class="modal-header">
-          <h2 class="modal-title">🔍 ค้นหาบันทึกปี 2027</h2>
+          <h2 class="modal-title">🔍 ค้นหาบันทึก</h2>
           <button class="close-btn" onclick="App.closeSearchModal()">✕</button>
         </div>
         <input type="text" id="search-query-input" class="text-input" placeholder="พิมพ์สิ่งที่ต้องการค้นหา..." oninput="App.onSearchInput(this.value)">
@@ -360,7 +366,7 @@
           <div class="card-section" style="margin-bottom:0; border-color:var(--accent-holiday-bg);">
             <div class="section-title" style="color:var(--accent-holiday); margin-bottom:8px;">⚠️ ล้างข้อมูล</div>
             <p style="font-size:var(--text-xs); color:var(--text-secondary); margin-bottom:12px;">
-              ล้างรายการบันทึก สิ่งที่ต้องทำ และนัดหมายทั้งหมดของปี 2027 ออกจากเครื่อง
+              ล้างรายการบันทึก สิ่งที่ต้องทำ และนัดหมายทั้งหมดออกจากเครื่อง
             </p>
             <button class="btn-primary" style="background:var(--accent-holiday); width:100%;" onclick="App.clearAllData()">
               🗑️ ล้างข้อมูลทั้งหมด

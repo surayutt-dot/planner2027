@@ -28,18 +28,19 @@
   <rect x="348" y="60" width="24" height="52" rx="12" fill="#1E293B"/>
   
   <!-- Header Text -->
-  <text x="256" y="148" fill="#FFFFFF" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="34" font-weight="800" text-anchor="middle" letter-spacing="2">PLANNER</text>
+  <text x="256" y="148" fill="#FFFFFF" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="34" font-weight="800" text-anchor="middle" letter-spacing="3">PLANNER</text>
   
-  <!-- Year Text -->
-  <text x="256" y="295" fill="#1E1B4B" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="94" font-weight="900" text-anchor="middle">2027</text>
+  <!-- Large Calendar Icon / Checkmark -->
+  <circle cx="256" cy="275" r="64" fill="#EEF2FF"/>
+  <path d="M224 275 L246 298 L292 250" fill="none" stroke="#4F46E5" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>
   
-  <!-- Subtitle (Thai Year) -->
-  <text x="256" y="348" fill="#6B7280" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="28" font-weight="700" text-anchor="middle">พ.ศ. ๒๕๗๐</text>
+  <!-- Subtitle -->
+  <text x="256" y="375" fill="#4338CA" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="28" font-weight="800" text-anchor="middle" letter-spacing="1">สมุดแพลนเนอร์</text>
 
   <!-- Accent indicator dots -->
-  <circle cx="180" cy="385" r="8" fill="#F43F5E"/>
-  <circle cx="218" cy="385" r="8" fill="#3B82F6"/>
-  <circle cx="256" cy="385" r="8" fill="#10B981"/>
-  <circle cx="294" cy="385" r="8" fill="#F59E0B"/>
-  <circle cx="332" cy="385" r="8" fill="#8B5CF6"/>
+  <circle cx="180" cy="405" r="6" fill="#F43F5E"/>
+  <circle cx="218" cy="405" r="6" fill="#3B82F6"/>
+  <circle cx="256" cy="405" r="6" fill="#10B981"/>
+  <circle cx="294" cy="405" r="6" fill="#F59E0B"/>
+  <circle cx="332" cy="405" r="6" fill="#8B5CF6"/>
 </svg>
