@@ -22,6 +22,8 @@ const App = {
     this.checkPWAInstall();
     this.updateNotificationButtonState();
     this.startReminderTicker();
+    this.checkUrlSync();
+    window.addEventListener('hashchange', () => this.checkUrlSync());
 
     // Initial render
     this.switchView('day');
@@ -949,6 +951,314 @@ const App = {
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#039;');
+  },
+
+  // --------------------------------------------------------------------------
+  // QR Code Sync (ซิงก์ข้อมูลข้ามเครื่องด้วย QR Code)
+  // --------------------------------------------------------------------------
+  currentSyncRange: 'recent',
+  currentSyncUrl: '',
+  pendingSyncPayload: null,
+  qrScannerStream: null,
+  qrScanAnimId: null,
+
+  openSyncModal() {
+    this.closeSettingsModal();
+    const modal = document.getElementById('sync-modal');
+    if (modal) {
+      modal.classList.add('open');
+      this.switchSyncTab('send');
+      this.renderSyncQr();
+    }
+  },
+
+  closeSyncModal() {
+    const modal = document.getElementById('sync-modal');
+    if (modal) modal.classList.remove('open');
+    this.stopQrScanner();
+  },
+
+  switchSyncTab(tab) {
+    const sendBtn = document.getElementById('sync-tab-send');
+    const recvBtn = document.getElementById('sync-tab-recv');
+    const sendPane = document.getElementById('sync-pane-send');
+    const recvPane = document.getElementById('sync-pane-recv');
+
+    if (tab === 'send') {
+      if (sendBtn) sendBtn.classList.add('active');
+      if (recvBtn) recvBtn.classList.remove('active');
+      if (sendPane) sendPane.classList.add('active');
+      if (recvPane) recvPane.classList.remove('active');
+      this.stopQrScanner();
+      this.renderSyncQr();
+    } else {
+      if (recvBtn) recvBtn.classList.add('active');
+      if (sendBtn) sendBtn.classList.remove('active');
+      if (recvPane) recvPane.classList.add('active');
+      if (sendPane) sendPane.classList.remove('active');
+    }
+  },
+
+  changeSyncRange(range) {
+    this.currentSyncRange = range;
+    const rRecent = document.getElementById('sync-range-recent');
+    const rAll = document.getElementById('sync-range-all');
+    if (rRecent) rRecent.classList.toggle('active', range === 'recent');
+    if (rAll) rAll.classList.toggle('active', range === 'all');
+    this.renderSyncQr();
+  },
+
+  renderSyncQr() {
+    const canvas = document.getElementById('sync-qr-canvas');
+    const badge = document.getElementById('sync-stat-badge');
+    if (!canvas || typeof QRious === 'undefined' || typeof LZString === 'undefined') return;
+
+    try {
+      const payload = Storage.getSyncData(this.currentSyncRange);
+      const jsonStr = JSON.stringify(payload);
+      const compressed = LZString.compressToEncodedURIComponent(jsonStr);
+      
+      const baseUrl = window.location.href.split('#')[0];
+      const syncUrl = `${baseUrl}#sync=${compressed}`;
+      this.currentSyncUrl = syncUrl;
+
+      new QRious({
+        element: canvas,
+        value: syncUrl,
+        size: 240,
+        level: 'L'
+      });
+
+      const dayCount = Object.keys(payload.data || {}).length;
+      if (badge) {
+        badge.textContent = `✓ รหัสพร้อมสแกน: ข้อมูล ${dayCount} วัน • ปลอดภัย 100%`;
+      }
+    } catch (e) {
+      console.error('Error rendering sync QR:', e);
+      if (badge) badge.textContent = '❌ ข้อมูลยาวเกินไป แนะนำเลือกโหมด "เดือนนี้และใกล้เคียง"';
+    }
+  },
+
+  copySyncLink() {
+    if (!this.currentSyncUrl) return;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(this.currentSyncUrl).then(() => {
+        alert('✓ คัดลอกลิงก์ซิงก์เรียบร้อยแล้ว! สามารถนำไปเปิดบนเบราว์เซอร์ของอีกเครื่องได้เลยครับ');
+      }).catch(() => {
+        prompt('คัดลอกลิงก์ด้านล่างนี้ได้เลยครับ:', this.currentSyncUrl);
+      });
+    } else {
+      prompt('คัดลอกลิงก์ด้านล่างนี้ได้เลยครับ:', this.currentSyncUrl);
+    }
+  },
+
+  async startQrScanner() {
+    const video = document.getElementById('qr-video');
+    const previewWrap = document.getElementById('cam-preview-wrap');
+    const startBtn = document.getElementById('start-cam-btn');
+    const stopBtn = document.getElementById('stop-cam-btn');
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      alert('เบราว์เซอร์นี้ไม่รองรับการเปิดกล้องโดยตรง กรุณาใช้กล้องถ่ายรูปของมือถือสแกนแทน หรือเลือกรูปภาพจากเครื่องครับ');
+      return;
+    }
+
+    try {
+      this.qrScannerStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment' }
+      });
+      video.srcObject = this.qrScannerStream;
+      video.setAttribute('playsinline', true);
+      await video.play();
+
+      if (previewWrap) previewWrap.style.display = 'block';
+      if (startBtn) startBtn.style.display = 'none';
+      if (stopBtn) stopBtn.style.display = 'flex';
+
+      this.scanQrFrame();
+    } catch (err) {
+      console.error('Cannot access camera:', err);
+      alert('ไม่สามารถเข้าถึงกล้องได้ กรุณาอนุญาตให้เข้าถึงกล้อง หรือใช้แอปกล้องถ่ายรูปของมือถือสแกนแทนครับ');
+    }
+  },
+
+  stopQrScanner() {
+    if (this.qrScanAnimId) {
+      cancelAnimationFrame(this.qrScanAnimId);
+      this.qrScanAnimId = null;
+    }
+    if (this.qrScannerStream) {
+      this.qrScannerStream.getTracks().forEach(track => track.stop());
+      this.qrScannerStream = null;
+    }
+    const previewWrap = document.getElementById('cam-preview-wrap');
+    const startBtn = document.getElementById('start-cam-btn');
+    const stopBtn = document.getElementById('stop-cam-btn');
+    if (previewWrap) previewWrap.style.display = 'none';
+    if (startBtn) startBtn.style.display = 'flex';
+    if (stopBtn) stopBtn.style.display = 'none';
+  },
+
+  scanQrFrame() {
+    const video = document.getElementById('qr-video');
+    const hiddenCanvas = document.getElementById('qr-hidden-canvas');
+    if (!video || !hiddenCanvas || video.readyState !== video.HAVE_ENOUGH_DATA) {
+      this.qrScanAnimId = requestAnimationFrame(() => this.scanQrFrame());
+      return;
+    }
+
+    const ctx = hiddenCanvas.getContext('2d');
+    hiddenCanvas.width = video.videoWidth;
+    hiddenCanvas.height = video.videoHeight;
+    ctx.drawImage(video, 0, 0, hiddenCanvas.width, hiddenCanvas.height);
+
+    const imageData = ctx.getImageData(0, 0, hiddenCanvas.width, hiddenCanvas.height);
+    if (typeof jsQR !== 'undefined') {
+      const code = jsQR(imageData.data, imageData.width, imageData.height, {
+        inversionAttempts: 'dontInvert'
+      });
+      if (code && code.data) {
+        this.stopQrScanner();
+        this.handleScannedUrl(code.data);
+        return;
+      }
+    }
+
+    this.qrScanAnimId = requestAnimationFrame(() => this.scanQrFrame());
+  },
+
+  handleQrImageFile(input) {
+    if (!input.files || input.files.length === 0) return;
+    const file = input.files[0];
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.getElementById('qr-hidden-canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.drawImage(img, 0, 0);
+        const imgData = ctx.getImageData(0, 0, img.width, img.height);
+        if (typeof jsQR !== 'undefined') {
+          const code = jsQR(imgData.data, imgData.width, imgData.height);
+          if (code && code.data) {
+            this.handleScannedUrl(code.data);
+          } else {
+            alert('ไม่พบ QR Code ในภาพ กรุณาเลือกภาพที่คมชัดและเห็น QR ชัดเจนครับ');
+          }
+        }
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+    input.value = '';
+  },
+
+  handleScannedUrl(raw) {
+    this.closeSyncModal();
+    let hashPart = '';
+    if (raw.includes('#sync=')) {
+      hashPart = raw.split('#sync=')[1];
+    } else if (raw.startsWith('#sync=')) {
+      hashPart = raw.slice(6);
+    } else {
+      hashPart = raw;
+    }
+
+    if (typeof LZString === 'undefined') {
+      setTimeout(() => this.handleScannedUrl(raw), 300);
+      return;
+    }
+
+    try {
+      const jsonStr = LZString.decompressFromEncodedURIComponent(hashPart);
+      if (!jsonStr) throw new Error('Decompression returned empty');
+      const payload = JSON.parse(jsonStr);
+      this.showIncomingSyncModal(payload);
+    } catch (e) {
+      console.error('Failed to parse sync data:', e);
+      alert('ข้อมูล QR Code ไม่ถูกต้องหรือเสียหาย กรุณาลองสแกนใหม่อีกครั้งครับ');
+    }
+  },
+
+  checkUrlSync() {
+    if (window.location.hash && window.location.hash.startsWith('#sync=')) {
+      const hashData = window.location.hash.slice(6);
+      if (hashData) {
+        setTimeout(() => {
+          this.handleScannedUrl(window.location.hash);
+        }, 300);
+      }
+    }
+  },
+
+  showIncomingSyncModal(payload) {
+    if (!payload || !payload.data) return;
+    this.pendingSyncPayload = payload;
+
+    const detailsEl = document.getElementById('incoming-sync-details');
+    const modal = document.getElementById('incoming-sync-modal');
+    if (!detailsEl || !modal) return;
+
+    let dayCount = 0;
+    let taskCount = 0;
+    let scheduleCount = 0;
+    let noteCount = 0;
+
+    for (const [dateStr, dayData] of Object.entries(payload.data)) {
+      dayCount++;
+      if (dayData.tasks) taskCount += dayData.tasks.length;
+      if (dayData.schedule) scheduleCount += dayData.schedule.length;
+      if (dayData.note && dayData.note.trim()) noteCount++;
+    }
+
+    const typeDesc = payload.type === 'recent' ? '📅 ช่วงเดือนนี้และใกล้เคียง' : '📦 ข้อมูลทั้งหมด';
+
+    detailsEl.innerHTML = `
+      <div style="font-weight:700; color:var(--primary); margin-bottom:8px;">${typeDesc}</div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:var(--text-xs); color:var(--text-secondary);">
+        <div>🗓️ วันที่บันทึก: <strong>${dayCount} วัน</strong></div>
+        <div>📋 งาน: <strong>${taskCount} รายการ</strong></div>
+        <div>⏰ นัดหมาย: <strong>${scheduleCount} รายการ</strong></div>
+        <div>📝 โน้ตบันทึก: <strong>${noteCount} วัน</strong></div>
+      </div>
+    `;
+
+    modal.classList.add('open');
+    this.playChimeSound();
+  },
+
+  confirmIncomingSync() {
+    if (!this.pendingSyncPayload) return;
+    const mergeMode = document.querySelector('input[name="incoming-sync-action"]:checked').value === 'merge';
+    const result = Storage.applySyncData(this.pendingSyncPayload, mergeMode);
+
+    if (result.success) {
+      if (window.history && window.history.replaceState) {
+        window.history.replaceState(null, null, window.location.pathname);
+      }
+      this.cancelIncomingSync();
+
+      // Re-render current view
+      if (this.currentView === 'day') this.renderDayView();
+      else if (this.currentView === 'month') this.renderMonthView();
+      else if (this.currentView === 'year') this.renderYearView();
+
+      this.playChimeSound();
+      alert(`🎉 อัปเดตข้อมูลเรียบร้อยแล้ว!\nนำเข้าข้อมูลทั้งหมด ${result.count} วัน ข้อมูลในเครื่องของคุณตรงกันแล้วครับ`);
+    } else {
+      alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล: ' + result.error);
+    }
+  },
+
+  cancelIncomingSync() {
+    this.pendingSyncPayload = null;
+    const modal = document.getElementById('incoming-sync-modal');
+    if (modal) modal.classList.remove('open');
+    if (window.history && window.history.replaceState && window.location.hash.startsWith('#sync=')) {
+      window.history.replaceState(null, null, window.location.pathname);
+    }
   }
 };
 

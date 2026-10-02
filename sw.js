@@ -1,8 +1,11 @@
-const CACHE_NAME = 'planner-app-v3';
+const CACHE_NAME = 'planner-app-v4';
 const ASSETS = [
   './',
   './index.html',
   './css/style.css',
+  './js/lz-string.min.js',
+  './js/qrious.min.js',
+  './js/jsQR.min.js',
   './js/holidays.js',
   './js/mascot.js',
   './js/storage.js',

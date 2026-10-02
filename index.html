@@ -42,6 +42,9 @@
         <button id="theme-toggle-btn" class="icon-btn" title="เปลี่ยนโหมดมืด/สว่าง">
           🌙
         </button>
+        <button class="icon-btn" onclick="App.openSyncModal()" title="ซิงก์ข้อมูลข้ามเครื่องด้วย QR Code">
+          📲
+        </button>
         <button class="icon-btn" onclick="App.openSettingsModal()" title="ตั้งค่าและสำรองข้อมูล">
           ⚙️
         </button>
@@ -345,6 +348,17 @@
             </div>
           </div>
 
+          <!-- QR Code Sync Section -->
+          <div class="card-section" style="margin-bottom:0; background:var(--bg-active); border:1.5px solid var(--primary);">
+            <div class="section-title" style="margin-bottom:6px; color:var(--primary);">📲 ซิงก์ข้อมูลข้ามเครื่อง (QR Code)</div>
+            <p style="font-size:var(--text-xs); color:var(--text-secondary); margin-bottom:12px;">
+              ย้ายข้อมูลระหว่างคอม ↔ มือถือ ง่ายๆ ใน 3 วินาที เพียงสแกน QR Code หน้าจอ ไม่ต้องส่งไฟล์ ไม่ต้องผ่านแชต
+            </p>
+            <button class="btn-primary" style="width:100%; justify-content:center; font-size:var(--text-sm); font-weight:700;" onclick="App.openSyncModal()">
+              📲 เปิดหน้าต่างซิงก์ QR Code
+            </button>
+          </div>
+
           <!-- Backup & Restore -->
           <div class="card-section" style="margin-bottom:0;">
             <div class="section-title" style="margin-bottom:8px;">💾 สำรองและกู้คืนข้อมูล</div>
@@ -399,12 +413,145 @@
       </div>
     </div>
 
+    <!-- ====================================================================
+         MODAL 4: QR CODE SYNC (ซิงก์ข้อมูลข้ามเครื่อง)
+         ==================================================================== -->
+    <div id="sync-modal" class="modal-backdrop">
+      <div class="modal-sheet">
+        <div class="modal-drag-handle"></div>
+        <div class="modal-header">
+          <h2 class="modal-title">📲 ซิงก์ข้อมูลข้ามเครื่อง</h2>
+          <button class="close-btn" onclick="App.closeSyncModal()">✕</button>
+        </div>
+
+        <div class="sync-tab-nav">
+          <button id="sync-tab-send" class="sync-tab-btn active" onclick="App.switchSyncTab('send')">
+            📤 ส่งข้อมูล (แสดง QR)
+          </button>
+          <button id="sync-tab-recv" class="sync-tab-btn" onclick="App.switchSyncTab('receive')">
+            📥 สแกนรับข้อมูล
+          </button>
+        </div>
+
+        <!-- Pane 1: Send / Show QR Code -->
+        <div id="sync-pane-send" class="sync-pane active">
+          <p style="font-size:var(--text-xs); color:var(--text-secondary); text-align:center; margin-bottom:12px;">
+            เปิดกล้องถ่ายรูปของมือถือแล้วส่องที่ QR Code นี้ได้เลย ข้อมูลจะย้ายไปมือถือทันที
+          </p>
+
+          <div class="sync-range-selector">
+            <button id="sync-range-recent" class="sync-range-pill active" onclick="App.changeSyncRange('recent')">
+              ✓ เดือนนี้และใกล้เคียง (แนะนำ)
+            </button>
+            <button id="sync-range-all" class="sync-range-pill" onclick="App.changeSyncRange('all')">
+              ข้อมูลทั้งหมด
+            </button>
+          </div>
+
+          <div class="sync-qr-wrapper">
+            <canvas id="sync-qr-canvas" width="240" height="240"></canvas>
+          </div>
+
+          <div style="text-align:center;">
+            <span id="sync-stat-badge" class="sync-stat-pill">กำลังสร้างรหัส...</span>
+          </div>
+
+          <div style="display:flex; gap:8px; margin-top:8px;">
+            <button class="btn-primary" style="flex:1; justify-content:center; font-size:var(--text-xs);" onclick="App.copySyncLink()">
+              📋 คัดลอกลิงก์ซิงก์
+            </button>
+            <button class="btn-primary" style="flex:1; justify-content:center; font-size:var(--text-xs); background:var(--bg-subtle); color:var(--text-primary); border:1px solid var(--border-color);" onclick="App.renderSyncQr()">
+              🔄 รีเฟรช QR
+            </button>
+          </div>
+
+          <div style="font-size:0.75rem; color:var(--text-muted); text-align:center; margin-top:12px; line-height:1.5;">
+            🔒 <strong>ความเป็นส่วนตัว 100%:</strong> ข้อมูลถูกบีบอัดและส่งตรงสู่กล้องโดยไม่มีการผ่านเซิร์ฟเวอร์หรือบุคคลอื่นเลยครับ
+          </div>
+        </div>
+
+        <!-- Pane 2: Receive / Camera Scanner -->
+        <div id="sync-pane-recv" class="sync-pane">
+          <p style="font-size:var(--text-xs); color:var(--text-secondary); text-align:center; margin-bottom:14px;">
+            กดปุ่มเปิดกล้องเพื่อส่อง QR Code จากหน้าจอคอม หรือเลือกภาพ QR Code จากอัลบั้ม
+          </p>
+
+          <div style="display:flex; flex-direction:column; gap:10px;">
+            <button id="start-cam-btn" class="btn-primary" style="width:100%; justify-content:center;" onclick="App.startQrScanner()">
+              📷 เปิดกล้องสแกน QR Code
+            </button>
+            <button id="stop-cam-btn" class="btn-primary" style="width:100%; justify-content:center; background:var(--accent-holiday); display:none;" onclick="App.stopQrScanner()">
+              🛑 ปิดกล้อง
+            </button>
+
+            <div id="cam-preview-wrap" style="display:none; text-align:center; position:relative; border-radius:14px; overflow:hidden; background:#000;">
+              <video id="qr-video" playsinline style="width:100%; max-height:240px; display:block; object-fit:cover;"></video>
+              <div style="position:absolute; inset:0; border:2px dashed rgba(255,255,255,0.7); margin:20px; border-radius:12px; pointer-events:none;"></div>
+            </div>
+            <canvas id="qr-hidden-canvas" style="display:none;"></canvas>
+
+            <div style="text-align:center; font-size:var(--text-xs); color:var(--text-muted); margin:4px 0;">— หรือ —</div>
+
+            <label class="btn-primary" style="background:var(--bg-subtle); color:var(--text-primary); border:1px solid var(--border-color); text-align:center; display:flex; justify-content:center; cursor:pointer;">
+              🖼️ เลือกรูปภาพ QR Code จากเครื่อง
+              <input type="file" accept="image/*" style="display:none;" onchange="App.handleQrImageFile(this)">
+            </label>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ====================================================================
+         MODAL 5: INCOMING SYNC CONFIRMATION (ยืนยันนำเข้าข้อมูลที่สแกนได้)
+         ==================================================================== -->
+    <div id="incoming-sync-modal" class="modal-backdrop">
+      <div class="modal-sheet" style="text-align: center; padding: 24px 20px;">
+        <div style="font-size: 3rem; margin-bottom: 6px;">📲✨</div>
+        <h2 style="font-size: var(--text-xl); font-weight: 800; color: var(--text-primary); margin-bottom: 6px;">
+          พบข้อมูลส่งมาจากอีกเครื่อง!
+        </h2>
+        <p style="font-size: var(--text-xs); color: var(--text-secondary); margin-bottom: 16px;">
+          ต้องการอัปเดตข้อมูลชุดนี้ลงในเครื่องนี้หรือไม่?
+        </p>
+
+        <!-- Summary Info Box -->
+        <div id="incoming-sync-details" style="background:var(--bg-subtle); border:1px solid var(--border-color); border-radius:var(--radius-md); padding:14px; text-align:left; font-size:var(--text-sm); margin-bottom:16px;">
+          <!-- Injected by JS -->
+        </div>
+
+        <!-- Mode Selection -->
+        <div style="text-align:left; margin-bottom:18px; font-size:var(--text-xs); color:var(--text-secondary); display:flex; flex-direction:column; gap:8px;">
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+            <input type="radio" name="incoming-sync-action" value="merge" checked style="accent-color:var(--primary); width:18px; height:18px;">
+            <span><strong>รวมข้อมูล (แนะนำ):</strong> นำเข้าข้อมูลใหม่โดยไม่ลบสิ่งที่มีอยู่เดิมในเครื่องนี้</span>
+          </label>
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+            <input type="radio" name="incoming-sync-action" value="replace" style="accent-color:var(--primary); width:18px; height:18px;">
+            <span><strong>แทนที่ทั้งหมด:</strong> ล้างข้อมูลเก่าแล้วใช้ข้อมูลชุดใหม่นี้แทน</span>
+          </label>
+        </div>
+
+        <div style="display:flex; gap:10px;">
+          <button class="btn-primary" style="flex:1.5; justify-content:center; height:48px; font-size:var(--text-base);" onclick="App.confirmIncomingSync()">
+            ✓ นำเข้าข้อมูลทันที
+          </button>
+          <button class="btn-secondary" style="flex:1; justify-content:center; height:48px;" onclick="App.cancelIncomingSync()">
+            ✕ ยกเลิก
+          </button>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <!-- Scripts -->
-  <script src="./js/holidays.js?v=3"></script>
-  <script src="./js/mascot.js?v=3"></script>
-  <script src="./js/storage.js?v=3"></script>
-  <script src="./js/app.js?v=3"></script>
+  <script src="./js/lz-string.min.js?v=4"></script>
+  <script src="./js/qrious.min.js?v=4"></script>
+  <script src="./js/jsQR.min.js?v=4"></script>
+  <script src="./js/holidays.js?v=4"></script>
+  <script src="./js/mascot.js?v=4"></script>
+  <script src="./js/storage.js?v=4"></script>
+  <script src="./js/app.js?v=4"></script>
 </body>
 </html>

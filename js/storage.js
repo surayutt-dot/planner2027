@@ -147,6 +147,41 @@ const Storage = {
     }
   },
 
+  // Get sync data for QR export
+  getSyncData(mode = 'recent') {
+    const all = this.getAll();
+    if (mode === 'all') {
+      return { v: 1, type: 'all', data: all };
+    }
+    // 'recent': 30 days before and 60 days after today
+    const filtered = {};
+    const now = new Date();
+    const minDate = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString().slice(0, 10);
+    const maxDate = new Date(now.getFullYear(), now.getMonth() + 2, 0).toISOString().slice(0, 10);
+
+    for (const [dateStr, dayData] of Object.entries(all)) {
+      if (dateStr >= minDate && dateStr <= maxDate) {
+        filtered[dateStr] = dayData;
+      }
+    }
+    return { v: 1, type: 'recent', data: filtered, range: `${minDate} ถึง ${maxDate}` };
+  },
+
+  // Apply sync data
+  applySyncData(syncPayload, merge = true) {
+    if (!syncPayload || !syncPayload.data || typeof syncPayload.data !== 'object') {
+      return { success: false, error: 'ข้อมูลไม่ถูกต้อง' };
+    }
+    const current = merge ? this.getAll() : {};
+    let updatedCount = 0;
+    for (const [dateStr, dayData] of Object.entries(syncPayload.data)) {
+      current[dateStr] = dayData;
+      updatedCount++;
+    }
+    this.saveAll(current);
+    return { success: true, count: updatedCount };
+  },
+
   // Settings
   getSettings() {
     try {
