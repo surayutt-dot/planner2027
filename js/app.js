@@ -515,10 +515,7 @@ const App = {
   },
 
   onMonthCellClick(dateKey) {
-    const parts = dateKey.split('-');
-    this.currentDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
-    // Re-render month view to update selected border and preview
-    this.renderMonthView();
+    this.goToDate(dateKey);
   },
 
   updateMonthPreview(dateKey) {
@@ -603,7 +600,7 @@ const App = {
         const hasData = datesWithData[dateKey];
 
         miniGridHtml += `
-          <span class="mini-cell ${holiday ? 'is-holiday' : ''} ${hasData ? 'has-note' : ''}">
+          <span class="mini-cell ${holiday ? 'is-holiday' : ''} ${hasData ? 'has-note' : ''}" onclick="event.stopPropagation(); App.goToDate('${dateKey}')">
             ${d}
           </span>
         `;
