@@ -18,8 +18,12 @@ const Storage = {
   saveAll(data) {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-      if (typeof FirebaseSync !== 'undefined' && FirebaseSync.currentUser) {
-        FirebaseSync.syncLocalToCloud();
+      try {
+        if (typeof FirebaseSync !== 'undefined' && FirebaseSync.currentUser) {
+          FirebaseSync.syncLocalToCloud();
+        }
+      } catch (fbErr) {
+        console.warn('Firebase sync warning:', fbErr);
       }
       return true;
     } catch (e) {

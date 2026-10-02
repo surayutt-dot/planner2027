@@ -74,14 +74,38 @@ const FirebaseSync = {
       } catch (e) {}
 
       // Listen for auth state changes
-      this.auth.onAuthStateChanged((user) => {
+      this.auth.onAuthStateChanged(async (user) => {
         this.currentUser = user;
         this.updateUI();
         if (user) {
           console.log('Firebase user signed in:', user.displayName || user.email);
+
+          // Initial sync: fetch cloud data first and merge safely
+          try {
+            const uid = user.uid;
+            const docRef = this.db.collection('users').doc(uid).collection('data').doc('planner');
+            const doc = await docRef.get();
+            if (doc.exists) {
+              const cloudData = doc.data();
+              if (cloudData && cloudData.payload && typeof cloudData.payload === 'object') {
+                const localData = Storage.getAll();
+                // Local data takes precedence on initial conflict
+                const merged = { ...cloudData.payload, ...localData };
+                localStorage.setItem('planner_2027_data', JSON.stringify(merged));
+                if (typeof App !== 'undefined' && App.currentView === 'day') {
+                  App.renderDayView();
+                }
+              }
+            } else {
+              // Cloud is empty: upload existing local data to cloud
+              await this.executeCloudSync();
+            }
+          } catch (err) {
+            console.error('Initial sync error:', err);
+          }
+
+          // Start realtime listener after initial merge
           this.startRealtimeListener();
-          // Initial sync: push local data if cloud is empty
-          this.syncLocalToCloud();
         } else {
           console.log('Firebase user signed out');
           this.stopRealtimeListener();
@@ -111,7 +135,6 @@ const FirebaseSync = {
     } catch (err) {
       console.error('Google Sign-In Error:', err);
       if (err.code === 'auth/popup-blocked') {
-        // Fallback to redirect
         this.auth.signInWithRedirect(new firebase.auth.GoogleAuthProvider());
       } else {
         alert('เข้าสู่ระบบไม่สำเร็จ: ' + (err.message || err.code));
@@ -138,26 +161,58 @@ const FirebaseSync = {
     const uid = this.currentUser.uid;
     const docRef = this.db.collection('users').doc(uid).collection('data').doc('planner');
 
-    this.unsubscribeSnapshot = docRef.onSnapshot((doc) => {
-      if (doc.exists) {
-        const cloudData = doc.data();
-        if (cloudData && cloudData.payload) {
-          // Compare and merge
-          const localData = Storage.getAll();
-          const merged = { ...localData, ...cloudData.payload };
-          
-          // Only update and re-render if there are actual changes
-          if (JSON.stringify(localData) !== JSON.stringify(merged)) {
-            Storage.saveAll(merged);
-            if (typeof App !== 'undefined') {
-              if (App.currentView === 'day') App.renderDayView();
-              else if (App.currentView === 'month') App.renderMonthView();
-              else if (App.currentView === 'year') App.renderYearView();
-            }
-            console.log('Realtime sync applied from cloud');
-          }
+    this.unsubscribeSnapshot = docRef.onSnapshot({ includeMetadataChanges: true }, (doc) => {
+      if (!doc.exists) return;
+
+      // CRITICAL: Ignore local echo (writes originating from this browser/device)
+      if (doc.metadata && doc.metadata.hasPendingWrites) {
+        return;
+      }
+
+      const cloudData = doc.data();
+      if (!cloudData || !cloudData.payload || typeof cloudData.payload !== 'object') return;
+
+      const localData = Storage.getAll();
+      const cloudPayload = cloudData.payload;
+
+      // Only apply if cloud data is genuinely different
+      if (JSON.stringify(localData) === JSON.stringify(cloudPayload)) {
+        return;
+      }
+
+      // Check if user is currently typing in the notes textarea
+      const notesArea = document.getElementById('daily-notes-textarea');
+      const isTypingNotes = document.activeElement === notesArea;
+
+      let dataToSave = cloudPayload;
+      if (isTypingNotes && typeof App !== 'undefined') {
+        const todayKey = App.formatDateKey(App.currentDate);
+        if (dataToSave[todayKey] && localData[todayKey]) {
+          dataToSave[todayKey].note = localData[todayKey].note;
         }
       }
+
+      // Update LocalStorage directly (DO NOT call Storage.saveAll to avoid infinite sync loop)
+      localStorage.setItem('planner_2027_data', JSON.stringify(dataToSave));
+
+      // Re-render UI safely without stealing user focus
+      if (typeof App !== 'undefined') {
+        if (App.currentView === 'day') {
+          if (isTypingNotes) {
+            const todayKey = App.formatDateKey(App.currentDate);
+            const dayData = Storage.getDayData(todayKey);
+            App.renderTaskList(dayData.tasks || []);
+            App.renderScheduleList(dayData.schedule || []);
+          } else {
+            App.renderDayView();
+          }
+        } else if (App.currentView === 'month') {
+          App.renderMonthView();
+        } else if (App.currentView === 'year') {
+          App.renderYearView();
+        }
+      }
+      console.log('Realtime sync applied from cloud');
     }, (error) => {
       console.error('Realtime listener error:', error);
     });
@@ -170,8 +225,17 @@ const FirebaseSync = {
     }
   },
 
+  // Debounced cloud sync: batch rapid local edits (like typing notes or adding tasks)
+  syncTimer: null,
+  syncLocalToCloud() {
+    clearTimeout(this.syncTimer);
+    this.syncTimer = setTimeout(() => {
+      this.executeCloudSync();
+    }, 500);
+  },
+
   // Upload local changes to cloud
-  async syncLocalToCloud() {
+  async executeCloudSync() {
     if (!this.db || !this.currentUser || this.isSyncing) return;
     this.isSyncing = true;
 

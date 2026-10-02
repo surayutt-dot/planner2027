@@ -1,4 +1,4 @@
-const CACHE_NAME = 'planner-app-v6';
+const CACHE_NAME = 'planner-app-v8';
 const ASSETS = [
   './',
   './index.html',
@@ -45,32 +45,26 @@ self.addEventListener('activate', (e) => {
 });
 
 self.addEventListener('fetch', (e) => {
-  // Only cache GET requests
+  // Only handle GET requests
   if (e.request.method !== 'GET') return;
 
+  // Network-First strategy: fetch newest files when online, fallback to cache when offline
   e.respondWith(
-    caches.match(e.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        // Return cached and update cache in background
-        fetch(e.request).then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
-            caches.open(CACHE_NAME).then((cache) => cache.put(e.request, networkResponse));
-          }
-        }).catch(() => {});
-        return cachedResponse;
-      }
-      return fetch(e.request).then((networkResponse) => {
+    fetch(e.request)
+      .then((networkResponse) => {
         if (networkResponse && networkResponse.status === 200 && e.request.url.startsWith(self.location.origin)) {
           const responseToCache = networkResponse.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(e.request, responseToCache));
         }
         return networkResponse;
-      }).catch(() => {
-        // Fallback to index.html if navigation
-        if (e.request.mode === 'navigate') {
-          return caches.match('./index.html');
-        }
-      });
-    })
+      })
+      .catch(() => {
+        return caches.match(e.request).then((cachedResponse) => {
+          if (cachedResponse) return cachedResponse;
+          if (e.request.mode === 'navigate') {
+            return caches.match('./index.html');
+          }
+        });
+      })
   );
 });

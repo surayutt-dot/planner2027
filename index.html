@@ -20,7 +20,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 
   <!-- Stylesheet -->
-  <link rel="stylesheet" href="./css/style.css?v=6">
+  <link rel="stylesheet" href="./css/style.css?v=8">
 </head>
 <body>
 
@@ -138,7 +138,41 @@
 
         <div class="schedule-input-row" style="margin-bottom:8px;">
           <select id="schedule-time-select" class="time-select" style="flex:1;">
-            <!-- Populated by JS -->
+            <option value="06:00">06:00</option>
+            <option value="06:30">06:30</option>
+            <option value="07:00">07:00</option>
+            <option value="07:30">07:30</option>
+            <option value="08:00">08:00</option>
+            <option value="08:30">08:30</option>
+            <option value="09:00" selected>09:00</option>
+            <option value="09:30">09:30</option>
+            <option value="10:00">10:00</option>
+            <option value="10:30">10:30</option>
+            <option value="11:00">11:00</option>
+            <option value="11:30">11:30</option>
+            <option value="12:00">12:00</option>
+            <option value="12:30">12:30</option>
+            <option value="13:00">13:00</option>
+            <option value="13:30">13:30</option>
+            <option value="14:00">14:00</option>
+            <option value="14:30">14:30</option>
+            <option value="15:00">15:00</option>
+            <option value="15:30">15:30</option>
+            <option value="16:00">16:00</option>
+            <option value="16:30">16:30</option>
+            <option value="17:00">17:00</option>
+            <option value="17:30">17:30</option>
+            <option value="18:00">18:00</option>
+            <option value="18:30">18:30</option>
+            <option value="19:00">19:00</option>
+            <option value="19:30">19:30</option>
+            <option value="20:00">20:00</option>
+            <option value="20:30">20:30</option>
+            <option value="21:00">21:00</option>
+            <option value="21:30">21:30</option>
+            <option value="22:00">22:00</option>
+            <option value="22:30">22:30</option>
+            <option value="23:00">23:00</option>
           </select>
           <select id="schedule-reminder-select" class="time-select" style="flex:1.2;">
             <option value="5" selected>🔔 เตือนก่อน 5 นาที</option>
@@ -168,8 +202,11 @@
           </h2>
         </div>
         <textarea id="daily-notes-textarea" class="notes-textarea" placeholder="จดบันทึกเรื่องราว ความคิด หรือไอเดียของวันนี้... (บันทึกอัตโนมัติ)" oninput="App.onNotesInput(this.value)"></textarea>
-        <div id="notes-save-indicator" class="auto-save-indicator">
-          <span>✓</span> บันทึกเรียบร้อยแล้ว
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
+          <button class="btn-primary" style="padding:0 20px; height:42px; font-size:var(--text-sm);" onclick="App.saveNotesNow()">💾 บันทึกโน้ต</button>
+          <div id="notes-save-indicator" class="auto-save-indicator">
+            <span>✓</span> บันทึกเรียบร้อยแล้ว
+          </div>
         </div>
       </section>
 
@@ -612,16 +649,16 @@
   </div>
 
   <!-- Scripts -->
-  <script src="./js/firebase-app-compat.js?v=6"></script>
-  <script src="./js/firebase-auth-compat.js?v=6"></script>
-  <script src="./js/firebase-firestore-compat.js?v=6"></script>
-  <script src="./js/firebase-sync.js?v=6"></script>
-  <script src="./js/lz-string.min.js?v=6"></script>
-  <script src="./js/qrious.min.js?v=6"></script>
-  <script src="./js/jsQR.min.js?v=6"></script>
-  <script src="./js/holidays.js?v=6"></script>
-  <script src="./js/mascot.js?v=6"></script>
-  <script src="./js/storage.js?v=6"></script>
-  <script src="./js/app.js?v=6"></script>
+  <script src="./js/firebase-app-compat.js?v=8"></script>
+  <script src="./js/firebase-auth-compat.js?v=8"></script>
+  <script src="./js/firebase-firestore-compat.js?v=8"></script>
+  <script src="./js/firebase-sync.js?v=8"></script>
+  <script src="./js/lz-string.min.js?v=8"></script>
+  <script src="./js/qrious.min.js?v=8"></script>
+  <script src="./js/jsQR.min.js?v=8"></script>
+  <script src="./js/holidays.js?v=8"></script>
+  <script src="./js/mascot.js?v=8"></script>
+  <script src="./js/storage.js?v=8"></script>
+  <script src="./js/app.js?v=8"></script>
 </body>
 </html>

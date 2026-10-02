@@ -285,10 +285,13 @@ const App = {
     const timeSelect = document.getElementById('schedule-time-select');
     const reminderSelect = document.getElementById('schedule-reminder-select');
     const input = document.getElementById('schedule-title-input');
-    const time = timeSelect.value;
+    const time = (timeSelect && timeSelect.value) ? timeSelect.value : '09:00';
     const reminder = reminderSelect ? parseInt(reminderSelect.value) : 5;
-    const title = input.value.trim();
-    if (!title) return;
+    const title = input ? input.value.trim() : '';
+    if (!title) {
+      if (input) input.focus();
+      return;
+    }
 
     const dateKey = this.formatDateKey(this.currentDate);
     const dayData = Storage.getDayData(dateKey);
@@ -303,7 +306,7 @@ const App = {
     });
 
     Storage.saveDayData(dateKey, dayData);
-    input.value = '';
+    if (input) input.value = '';
     this.renderDayView();
   },
 
@@ -327,9 +330,29 @@ const App = {
       dayData.note = val;
       Storage.saveDayData(dateKey, dayData);
 
+      if (indicator) {
+        indicator.textContent = '✓ บันทึกเรียบร้อยแล้ว';
+        indicator.classList.add('show');
+        setTimeout(() => indicator.classList.remove('show'), 2000);
+      }
+    }, 300);
+  },
+
+  saveNotesNow() {
+    const notesArea = document.getElementById('daily-notes-textarea');
+    if (!notesArea) return;
+    const val = notesArea.value;
+    const dateKey = this.formatDateKey(this.currentDate);
+    const dayData = Storage.getDayData(dateKey);
+    dayData.note = val;
+    Storage.saveDayData(dateKey, dayData);
+
+    const indicator = document.getElementById('notes-save-indicator');
+    if (indicator) {
+      indicator.textContent = '✓ บันทึกโน้ตเรียบร้อยแล้ว!';
       indicator.classList.add('show');
-      setTimeout(() => indicator.classList.remove('show'), 2000);
-    }, 400);
+      setTimeout(() => indicator.classList.remove('show'), 2500);
+    }
   },
 
   renderMascot() {
