@@ -18,6 +18,9 @@ const Storage = {
   saveAll(data) {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      if (typeof FirebaseSync !== 'undefined' && FirebaseSync.currentUser) {
+        FirebaseSync.syncLocalToCloud();
+      }
       return true;
     } catch (e) {
       console.error('Error saving storage:', e);

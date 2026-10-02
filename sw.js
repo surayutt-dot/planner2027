@@ -1,8 +1,12 @@
-const CACHE_NAME = 'planner-app-v4';
+const CACHE_NAME = 'planner-app-v6';
 const ASSETS = [
   './',
   './index.html',
   './css/style.css',
+  './js/firebase-app-compat.js',
+  './js/firebase-auth-compat.js',
+  './js/firebase-firestore-compat.js',
+  './js/firebase-sync.js',
   './js/lz-string.min.js',
   './js/qrious.min.js',
   './js/jsQR.min.js',
