@@ -203,7 +203,7 @@ const App = {
       <div class="task-item ${task.completed ? 'completed' : ''}" data-idx="${idx}">
         <input type="checkbox" class="task-checkbox" ${task.completed ? 'checked' : ''} onchange="App.toggleTask(${idx})">
         <span class="task-text" onclick="App.toggleTask(${idx})">${this.escapeHtml(task.text)}</span>
-        <button class="delete-task-btn" onclick="App.deleteTask(${idx})" title="ลบรายการ">✕</button>
+        <button type="button" class="delete-task-btn" onclick="event.stopPropagation(); App.deleteTask(${idx})" title="ลบรายการ">✕</button>
       </div>
     `).join('');
   },
@@ -224,6 +224,9 @@ const App = {
     });
 
     Storage.saveDayData(dateKey, dayData);
+    if (typeof FirebaseSync !== 'undefined' && FirebaseSync.currentUser) {
+      FirebaseSync.executeCloudSync();
+    }
     input.value = '';
     this.renderDayView();
   },
@@ -234,6 +237,9 @@ const App = {
     if (dayData.tasks && dayData.tasks[idx]) {
       dayData.tasks[idx].completed = !dayData.tasks[idx].completed;
       Storage.saveDayData(dateKey, dayData);
+      if (typeof FirebaseSync !== 'undefined' && FirebaseSync.currentUser) {
+        FirebaseSync.executeCloudSync();
+      }
       this.renderDayView();
     }
   },
@@ -241,9 +247,12 @@ const App = {
   deleteTask(idx) {
     const dateKey = this.formatDateKey(this.currentDate);
     const dayData = Storage.getDayData(dateKey);
-    if (dayData.tasks && dayData.tasks[idx]) {
+    if (dayData.tasks && idx >= 0 && idx < dayData.tasks.length) {
       dayData.tasks.splice(idx, 1);
       Storage.saveDayData(dateKey, dayData);
+      if (typeof FirebaseSync !== 'undefined' && FirebaseSync.currentUser) {
+        FirebaseSync.executeCloudSync();
+      }
       this.renderDayView();
     }
   },
@@ -279,7 +288,7 @@ const App = {
             <span class="schedule-title-text">${this.escapeHtml(item.title)}</span>
             ${reminderBadge}
           </div>
-          <button class="delete-task-btn" onclick="App.deleteSchedule(${idx})" title="ลบ">✕</button>
+          <button type="button" class="delete-task-btn" onclick="event.stopPropagation(); App.deleteSchedule(${idx})" title="ลบ">✕</button>
         </div>
       `;
     }).join('');
@@ -310,6 +319,9 @@ const App = {
     });
 
     Storage.saveDayData(dateKey, dayData);
+    if (typeof FirebaseSync !== 'undefined' && FirebaseSync.currentUser) {
+      FirebaseSync.executeCloudSync();
+    }
     if (input) input.value = '';
     this.renderDayView();
   },
@@ -317,9 +329,12 @@ const App = {
   deleteSchedule(idx) {
     const dateKey = this.formatDateKey(this.currentDate);
     const dayData = Storage.getDayData(dateKey);
-    if (dayData.schedule && dayData.schedule[idx]) {
+    if (dayData.schedule && idx >= 0 && idx < dayData.schedule.length) {
       dayData.schedule.splice(idx, 1);
       Storage.saveDayData(dateKey, dayData);
+      if (typeof FirebaseSync !== 'undefined' && FirebaseSync.currentUser) {
+        FirebaseSync.executeCloudSync();
+      }
       this.renderDayView();
     }
   },
