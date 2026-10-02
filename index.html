@@ -201,9 +201,12 @@
             <span>📝</span> บันทึก & ไดอารี่ประจำวัน
           </h2>
         </div>
-        <textarea id="daily-notes-textarea" class="notes-textarea" placeholder="จดบันทึกเรื่องราว ความคิด หรือไอเดียของวันนี้... (บันทึกอัตโนมัติ)" oninput="App.onNotesInput(this.value)"></textarea>
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
-          <button class="btn-primary" style="padding:0 20px; height:42px; font-size:var(--text-sm);" onclick="App.saveNotesNow()">💾 บันทึกโน้ต</button>
+        <textarea id="daily-notes-textarea" class="notes-textarea" placeholder="จดบันทึกเรื่องราว ความคิด หรือไดอารี่ประจำวัน... (บันทึกอัตโนมัติทันที)" oninput="App.onNotesInput(this.value)" onblur="App.saveNotesNow()"></textarea>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px; flex-wrap:wrap; gap:8px;">
+          <div style="display:flex; gap:8px;">
+            <button type="button" class="btn-primary" style="padding:0 18px; height:42px; font-size:var(--text-sm);" onclick="App.saveNotesNow()">💾 บันทึกโน้ต</button>
+            <button type="button" class="btn-secondary" style="padding:0 14px; height:42px; font-size:var(--text-sm);" onclick="App.insertNoteTimestamp()" title="แทรกเวลาปัจจุบันเพื่อพิมพ์ไดอารี่เพิ่ม">⏰ ลงเวลา</button>
+          </div>
           <div id="notes-save-indicator" class="auto-save-indicator">
             <span>✓</span> บันทึกเรียบร้อยแล้ว
           </div>
@@ -649,16 +652,16 @@
   </div>
 
   <!-- Scripts -->
-  <script src="./js/firebase-app-compat.js?v=8"></script>
-  <script src="./js/firebase-auth-compat.js?v=8"></script>
-  <script src="./js/firebase-firestore-compat.js?v=8"></script>
-  <script src="./js/firebase-sync.js?v=8"></script>
-  <script src="./js/lz-string.min.js?v=8"></script>
-  <script src="./js/qrious.min.js?v=8"></script>
-  <script src="./js/jsQR.min.js?v=8"></script>
-  <script src="./js/holidays.js?v=8"></script>
-  <script src="./js/mascot.js?v=8"></script>
-  <script src="./js/storage.js?v=8"></script>
-  <script src="./js/app.js?v=8"></script>
+  <script src="./js/firebase-app-compat.js?v=9"></script>
+  <script src="./js/firebase-auth-compat.js?v=9"></script>
+  <script src="./js/firebase-firestore-compat.js?v=9"></script>
+  <script src="./js/firebase-sync.js?v=9"></script>
+  <script src="./js/lz-string.min.js?v=9"></script>
+  <script src="./js/qrious.min.js?v=9"></script>
+  <script src="./js/jsQR.min.js?v=9"></script>
+  <script src="./js/holidays.js?v=9"></script>
+  <script src="./js/mascot.js?v=9"></script>
+  <script src="./js/storage.js?v=9"></script>
+  <script src="./js/app.js?v=9"></script>
 </body>
 </html>

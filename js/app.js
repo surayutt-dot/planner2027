@@ -177,7 +177,11 @@ const App = {
 
     // Render Daily Notes
     const notesArea = document.getElementById('daily-notes-textarea');
-    notesArea.value = dayData.note || '';
+    if (notesArea) {
+      if (document.activeElement !== notesArea) {
+        notesArea.value = dayData.note || '';
+      }
+    }
 
     // Render Daily Mascot (การ์ตูนน่ารักประจำวัน)
     this.renderMascot();
@@ -331,14 +335,15 @@ const App = {
       Storage.saveDayData(dateKey, dayData);
 
       if (indicator) {
-        indicator.textContent = '✓ บันทึกเรียบร้อยแล้ว';
+        indicator.innerHTML = '<span>✓</span> บันทึกเรียบร้อยแล้ว';
         indicator.classList.add('show');
         setTimeout(() => indicator.classList.remove('show'), 2000);
       }
-    }, 300);
+    }, 400);
   },
 
   saveNotesNow() {
+    clearTimeout(this.autoSaveTimer);
     const notesArea = document.getElementById('daily-notes-textarea');
     if (!notesArea) return;
     const val = notesArea.value;
@@ -347,12 +352,30 @@ const App = {
     dayData.note = val;
     Storage.saveDayData(dateKey, dayData);
 
+    // Immediately trigger cloud sync without debounce delay
+    if (typeof FirebaseSync !== 'undefined' && FirebaseSync.currentUser) {
+      FirebaseSync.executeCloudSync();
+    }
+
     const indicator = document.getElementById('notes-save-indicator');
     if (indicator) {
-      indicator.textContent = '✓ บันทึกโน้ตเรียบร้อยแล้ว!';
+      indicator.innerHTML = '<span>✓</span> บันทึกโน้ตเรียบร้อยแล้ว!';
       indicator.classList.add('show');
       setTimeout(() => indicator.classList.remove('show'), 2500);
     }
+  },
+
+  insertNoteTimestamp() {
+    const notesArea = document.getElementById('daily-notes-textarea');
+    if (!notesArea) return;
+    const now = new Date();
+    const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} น.`;
+    const currentVal = notesArea.value;
+    const prefix = (currentVal.trim().length > 0 && !currentVal.endsWith('\n')) ? '\n\n' : '';
+    notesArea.value = currentVal + prefix + `📝 [${timeStr}] `;
+    notesArea.focus();
+    notesArea.setSelectionRange(notesArea.value.length, notesArea.value.length);
+    this.saveNotesNow();
   },
 
   renderMascot() {

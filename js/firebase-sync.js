@@ -175,43 +175,101 @@ const FirebaseSync = {
       const localData = Storage.getAll();
       const cloudPayload = cloudData.payload;
 
-      // Only apply if cloud data is genuinely different
-      if (JSON.stringify(localData) === JSON.stringify(cloudPayload)) {
-        return;
-      }
-
-      // Check if user is currently typing in the notes textarea
       const notesArea = document.getElementById('daily-notes-textarea');
-      const isTypingNotes = document.activeElement === notesArea;
+      const isTypingNotes = (document.activeElement === notesArea);
+      const currentActiveDate = (typeof App !== 'undefined' && App.currentDate) ? App.formatDateKey(App.currentDate) : null;
 
-      let dataToSave = cloudPayload;
-      if (isTypingNotes && typeof App !== 'undefined') {
-        const todayKey = App.formatDateKey(App.currentDate);
-        if (dataToSave[todayKey] && localData[todayKey]) {
-          dataToSave[todayKey].note = localData[todayKey].note;
-        }
-      }
+      // Intelligent Smart Merge: Never let an empty cloud note wipe out a local note!
+      const mergedData = { ...localData };
 
-      // Update LocalStorage directly (DO NOT call Storage.saveAll to avoid infinite sync loop)
-      localStorage.setItem('planner_2027_data', JSON.stringify(dataToSave));
+      for (const [dateStr, cloudDay] of Object.entries(cloudPayload)) {
+        if (!cloudDay || typeof cloudDay !== 'object') continue;
 
-      // Re-render UI safely without stealing user focus
-      if (typeof App !== 'undefined') {
-        if (App.currentView === 'day') {
-          if (isTypingNotes) {
-            const todayKey = App.formatDateKey(App.currentDate);
-            const dayData = Storage.getDayData(todayKey);
-            App.renderTaskList(dayData.tasks || []);
-            App.renderScheduleList(dayData.schedule || []);
-          } else {
-            App.renderDayView();
+        if (!mergedData[dateStr]) {
+          mergedData[dateStr] = cloudDay;
+        } else {
+          const localDay = mergedData[dateStr];
+
+          // Tasks merge
+          const localTasks = Array.isArray(localDay.tasks) ? localDay.tasks : [];
+          const cloudTasks = Array.isArray(cloudDay.tasks) ? cloudDay.tasks : [];
+          let mergedTasks = cloudTasks;
+          if (localTasks.length > 0 && cloudTasks.length === 0) {
+            mergedTasks = localTasks;
+          } else if (localTasks.length > 0 && cloudTasks.length > 0) {
+            const taskMap = new Map();
+            localTasks.forEach(t => taskMap.set(t.id || t.text, t));
+            cloudTasks.forEach(t => taskMap.set(t.id || t.text, t));
+            mergedTasks = Array.from(taskMap.values());
           }
-        } else if (App.currentView === 'month') {
-          App.renderMonthView();
-        } else if (App.currentView === 'year') {
-          App.renderYearView();
+
+          // Schedule merge
+          const localSched = Array.isArray(localDay.schedule) ? localDay.schedule : [];
+          const cloudSched = Array.isArray(cloudDay.schedule) ? cloudDay.schedule : [];
+          let mergedSched = cloudSched;
+          if (localSched.length > 0 && cloudSched.length === 0) {
+            mergedSched = localSched;
+          } else if (localSched.length > 0 && cloudSched.length > 0) {
+            const schedMap = new Map();
+            localSched.forEach(s => schedMap.set(s.id || `${s.time}_${s.title}`, s));
+            cloudSched.forEach(s => schedMap.set(s.id || `${s.time}_${s.title}`, s));
+            mergedSched = Array.from(schedMap.values());
+          }
+
+          // Note merge: NEVER overwrite existing local note with empty cloud note!
+          let finalNote = cloudDay.note || '';
+          const localNote = (localDay.note || '').trim();
+          const cloudNoteStr = (cloudDay.note || '').trim();
+
+          if (isTypingNotes && dateStr === currentActiveDate && notesArea) {
+            finalNote = notesArea.value;
+          } else if (localNote && !cloudNoteStr) {
+            // Local has note, cloud is blank -> keep local note!
+            finalNote = localDay.note;
+          } else if (localNote && cloudNoteStr) {
+            finalNote = cloudDay.note;
+          }
+
+          const finalWater = Math.max(localDay.water || 0, cloudDay.water || 0);
+
+          mergedData[dateStr] = {
+            tasks: mergedTasks,
+            schedule: mergedSched,
+            note: finalNote,
+            water: finalWater
+          };
         }
       }
+
+      // Check if localStorage needs updating
+      const hasChanges = JSON.stringify(localData) !== JSON.stringify(mergedData);
+      if (hasChanges) {
+        localStorage.setItem('planner_2027_data', JSON.stringify(mergedData));
+
+        // Re-render UI safely without stealing user focus
+        if (typeof App !== 'undefined') {
+          if (App.currentView === 'day') {
+            if (isTypingNotes) {
+              const todayKey = App.formatDateKey(App.currentDate);
+              const dayData = Storage.getDayData(todayKey);
+              App.renderTaskList(dayData.tasks || []);
+              App.renderScheduleList(dayData.schedule || []);
+            } else {
+              App.renderDayView();
+            }
+          } else if (App.currentView === 'month') {
+            App.renderMonthView();
+          } else if (App.currentView === 'year') {
+            App.renderYearView();
+          }
+        }
+      }
+
+      // If local had data that cloud was missing, push merged back to cloud
+      if (JSON.stringify(mergedData) !== JSON.stringify(cloudPayload)) {
+        this.executeCloudSync();
+      }
+
       console.log('Realtime sync applied from cloud');
     }, (error) => {
       console.error('Realtime listener error:', error);
